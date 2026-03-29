@@ -1,0 +1,5 @@
+
+# Environment files - KHONG PUSH LEN GIT
+.env
+.env.*
+!.env.example
