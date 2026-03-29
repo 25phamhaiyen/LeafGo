@@ -1,0 +1,46 @@
+version: '3.9'
+
+# Chạy bằng lệnh:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+
+  sqlserver:
+    ports:
+      - "1433:1433"   # Mở port ra ngoài để dùng SSMS / DataGrip
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: >
+        Server=sqlserver,1433;Database=${DB_NAME};
+        User Id=sa;Password=${DB_PASSWORD};
+        TrustServerCertificate=True;
+    ports:
+      - "8080:8080"   # Gọi API trực tiếp không qua nginx
+    volumes:
+      # Hot reload: mount source vào container
+      - ./backend:/app/source
+    command: >
+      sh -c "dotnet watch run
+             --project /app/source/src/LeafGo.API/LeafGo.API.csproj"
+
+  flutter:
+    ports:
+      - "3000:80"     # Xem Flutter web tại localhost:3000
+
+  nginx:
+    ports:
+      - "80:80"
+```
+
+---
+
+## Sơ đồ luồng request
+```
+User → nginx:80
+         ├── /api/*  → api:8080  → sqlserver:1433
+         └── /*      → flutter:80 (static files)

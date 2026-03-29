@@ -1,0 +1,91 @@
+services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: leafgo_sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: ${DB_PASSWORD}
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqldata:/var/opt/mssql
+      - ./docker/sql/LeafGoDB.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - leafgo_network
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd",
+             "-S", "localhost", "-U", "sa", "-P", "${DB_PASSWORD}",
+             "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: leafgo_api
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:${API_PORT}
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=${DB_NAME};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__ExpirationMinutes: ${JWT_EXPIRY_MINUTES}
+      ConnectionStrings__Redis: redis:6379
+      EnableSwagger: "true"
+    volumes:
+      - avatars_data:/app/wwwroot/avatars
+      - dataprotection_keys:/home/appuser/.aspnet/DataProtection-Keys
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - leafgo_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: leafgo_redis
+    networks:
+      - leafgo_network
+    restart: unless-stopped
+
+  flutter:
+    build:
+      context: ./leafgo_app
+      dockerfile: Dockerfile
+    container_name: leafgo_flutter
+    depends_on:
+      - api
+    networks:
+      - leafgo_network
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: leafgo_nginx
+    ports:
+      - "8000:80"
+    depends_on:
+      - api
+      - flutter
+    networks:
+      - leafgo_network
+    restart: unless-stopped
+
+volumes:
+  sqldata:
+  avatars_data:
+  dataprotection_keys:
+
+networks:
+  leafgo_network:
+    driver: bridge
