@@ -5,7 +5,6 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/auth/presentation/pages/register_screen.dart';
 import 'features/auth/presentation/pages/forgot_password_screen.dart';
-import 'features/home/presentation/pages/home_screen.dart';
 import 'features/admin/presentation/pages/admin_dashboard_screen.dart';
 
 void main() async {
@@ -34,7 +33,6 @@ class LeafGoApp extends StatelessWidget {
               if (state.user.role == 'Admin') {
                 return const AdminDashboardScreen();
               }
-              return const HomeScreen();
             }
             if (state is AuthUnauthenticated) return const LoginScreen();
             return const Scaffold(
