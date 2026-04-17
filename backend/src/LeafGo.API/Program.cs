@@ -208,7 +208,7 @@ namespace LeafGo.API
                 });
             }
 
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection();
             // Serve static files for uploaded avatars
             var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 
