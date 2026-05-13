@@ -55,6 +55,7 @@ class UserModel {
   final String id;
   final String email;
   final String fullName;
+  final String phoneNumber; // Added phoneNumber
   final String role;
   final String accessToken;
   final String refreshToken;
@@ -65,6 +66,7 @@ class UserModel {
     required this.id,
     required this.email,
     required this.fullName,
+    required this.phoneNumber,
     required this.role,
     required this.accessToken,
     required this.refreshToken,
@@ -77,6 +79,7 @@ class UserModel {
       id: json['id'] as String,
       email: json['email'] as String,
       fullName: json['fullName'] as String,
+      phoneNumber: json['phoneNumber'] as String? ?? '', // Handle potential missing field
       role: json['role'] as String,
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
@@ -89,6 +92,7 @@ class UserModel {
     'id': id,
     'email': email,
     'fullName': fullName,
+    'phoneNumber': phoneNumber,
     'role': role,
     'accessToken': accessToken,
     'refreshToken': refreshToken,
@@ -98,6 +102,7 @@ class UserModel {
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
 }
+
 
 // ── Token model (refresh response) ───────────────────────────
 class TokenModel {

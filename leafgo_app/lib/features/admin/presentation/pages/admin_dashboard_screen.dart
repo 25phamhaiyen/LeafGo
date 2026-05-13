@@ -33,6 +33,13 @@ class AdminDashboardScreen extends StatelessWidget {
                 context.read<AdminBloc>().add(AdminFetchDashboardData(token));
               },
             ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                context.read<AuthBloc>().add(AuthLogoutRequested());
+                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+              },
+            ),
           ],
         ),
         body: BlocBuilder<AdminBloc, AdminState>(

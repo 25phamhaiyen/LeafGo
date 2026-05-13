@@ -5,6 +5,7 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/auth/presentation/pages/register_screen.dart';
 import 'features/auth/presentation/pages/forgot_password_screen.dart';
+import 'features/user/presentation/pages/main_screen.dart';
 import 'features/admin/presentation/pages/admin_dashboard_screen.dart';
 
 void main() async {
@@ -12,6 +13,7 @@ void main() async {
   await setupDI();
   runApp(const LeafGoApp());
 }
+
 
 class LeafGoApp extends StatelessWidget {
   const LeafGoApp({super.key});
@@ -24,8 +26,9 @@ class LeafGoApp extends StatelessWidget {
         title: 'LeafGo',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorSchemeSeed: const Color(0xFF2D7A4F),
+          colorSchemeSeed: const Color(0xFF10B981),
           useMaterial3: true,
+          fontFamily: 'Inter', // Assuming Inter is available or fallback to default
         ),
         home: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
@@ -33,6 +36,7 @@ class LeafGoApp extends StatelessWidget {
               if (state.user.role == 'Admin') {
                 return const AdminDashboardScreen();
               }
+              return const MainScreen();
             }
             if (state is AuthUnauthenticated) return const LoginScreen();
             return const Scaffold(
@@ -41,10 +45,13 @@ class LeafGoApp extends StatelessWidget {
           },
         ),
         routes: {
-        '/login': (ctx) => const LoginScreen(),
-        '/register': (ctx) => const RegisterScreen(),
-        '/forgot-password': (ctx) => const ForgotPasswordScreen(),
-      },
-    ));
+          '/login': (ctx) => const LoginScreen(),
+          '/register': (ctx) => const RegisterScreen(),
+          '/forgot-password': (ctx) => const ForgotPasswordScreen(),
+          '/home': (ctx) => const MainScreen(),
+        },
+      ),
+    );
   }
 }
+

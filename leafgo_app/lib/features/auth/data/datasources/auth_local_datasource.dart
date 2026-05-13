@@ -76,6 +76,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
         role: user.role,
         accessToken: accessToken,
         refreshToken: refreshToken,
