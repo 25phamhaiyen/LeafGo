@@ -19,7 +19,7 @@ class AdminDashboardScreen extends StatelessWidget {
       create: (context) {
         final authState = context.read<AuthBloc>().state;
         final token = (authState is AuthAuthenticated) ? authState.user.accessToken : '';
-        return sl<AdminBloc>()..add(AdminFetchDashboardData(token));
+        return sl<AdminBloc>()..add(AdminFetchDashboardData(token!));
       },
       child: Scaffold(
         appBar: AppBar(
@@ -30,7 +30,7 @@ class AdminDashboardScreen extends StatelessWidget {
               onPressed: () {
                 final authState = context.read<AuthBloc>().state;
                 final token = (authState is AuthAuthenticated) ? authState.user.accessToken : '';
-                context.read<AdminBloc>().add(AdminFetchDashboardData(token));
+                context.read<AdminBloc>().add(AdminFetchDashboardData(token!));
               },
             ),
             IconButton(

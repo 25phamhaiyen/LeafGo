@@ -1,53 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/user_bloc.dart';
+
+import 'package:leafgo_app/features/booking/presentation/bloc/booking_bloc.dart';
+import 'package:leafgo_app/features/driver/presentation/bloc/driver_bloc.dart';
+import 'package:leafgo_app/features/driver/presentation/pages/driver_vehicle_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF10B981);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tài khoản'),
         centerTitle: true,
       ),
-      body: BlocBuilder<AuthBloc, AuthState>(
+      body: BlocBuilder<UserBloc, UserState>(
         builder: (context, state) {
-          if (state is AuthAuthenticated) {
-            final user = state.user;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+          if (state.isLoading && state.profile == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          final user = state.profile;
+          if (user == null) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Color(0xFFE6F7F0),
-                    child: Icon(Icons.person, size: 50, color: Color(0xFF10B981)),
-                  ),
+                  const Text('Không thể tải thông tin hồ sơ'),
                   const SizedBox(height: 16),
-                  Text(
-                    user.fullName,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ElevatedButton(
+                    onPressed: () => context.read<UserBloc>().add(UserFetchProfile()),
+                    child: const Text('Thử lại'),
                   ),
-                  Text(
-                    user.email,
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  _buildProfileItem(Icons.phone_outlined, 'Số điện thoại', user.phoneNumber),
-                  _buildProfileItem(Icons.badge_outlined, 'Vai trò', user.role == 'User' ? 'Người dùng' : 'Tài xế'),
-                  
-                  const SizedBox(height: 48),
-                  
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<AuthBloc>().add(AuthLogoutRequested());
-                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                ],
+              ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: const Color(0xFFE6F7F0),
+                      backgroundImage: user.avatar != null ? NetworkImage(user.avatar!) : null,
+                      child: user.avatar == null 
+                        ? const Icon(Icons.person, size: 50, color: Color(0xFF10B981)) 
+                        : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  user.fullName,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  user.email,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 32),
+                
+                _buildProfileItem(Icons.phone_outlined, 'Số điện thoại', user.phoneNumber),
+                _buildProfileItem(Icons.badge_outlined, 'Vai trò', user.role == 'User' ? 'Người dùng' : 'Tài xế'),
+                _buildProfileItem(Icons.calendar_today_outlined, 'Thành viên từ', 
+                    user.createdAt != null ? DateFormat('dd/MM/yyyy').format(user.createdAt!) : 'N/A'),
+                
+                if (user.role == 'Driver') ...[
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () {
+                      final driverBloc = context.read<DriverBloc>();
+                      final bookingBloc = context.read<BookingBloc>();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => MultiBlocProvider(
+                            providers: [
+                              BlocProvider.value(value: driverBloc),
+                              BlocProvider.value(value: bookingBloc),
+                            ],
+                            child: const DriverVehicleScreen(),
+                          ),
+                        ),
+                      );
                     },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F7F0),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.directions_car, color: Color(0xFF10B981)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Thông tin phương tiện', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                Text('Xem và chỉnh sửa đăng ký xe của bạn', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: Color(0xFF10B981)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 48),
+                
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Using context.read<AuthBloc>() here because logout is an Auth concern
+                    context.read<AuthBloc>().add(AuthLogoutRequested());
+                    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                  },
                     icon: const Icon(Icons.logout),
                     label: const Text('Đăng xuất'),
                     style: ElevatedButton.styleFrom(
@@ -63,8 +151,6 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             );
-          }
-          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
