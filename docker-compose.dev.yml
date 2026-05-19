@@ -35,12 +35,12 @@ services:
   nginx:
     ports:
       - "80:80"
-```
+# ```
 
----
+# ---
 
-## Sơ đồ luồng request
-```
-User → nginx:80
-         ├── /api/*  → api:8080  → sqlserver:1433
-         └── /*      → flutter:80 (static files)
+# ## Sơ đồ luồng request
+# ```
+# User → nginx:80
+#          ├── /api/*  → api:8080  → sqlserver:1433
+#          └── /*      → flutter:80 (static files)

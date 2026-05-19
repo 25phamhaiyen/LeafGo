@@ -152,6 +152,14 @@ namespace LeafGo.API
                     .AllowAnyHeader()
                     .AllowCredentials();
                 });
+
+                options.AddPolicy("AllowFlutterWeb", policy =>
+                {
+                    policy
+                        .AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
             });
 
             // Application Services
@@ -228,7 +236,7 @@ namespace LeafGo.API
             // Add exception handling middleware
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-            app.UseCors("AllowFrontend");
+            app.UseCors("AllowFlutterWeb");
 
             app.UseAuthentication();
             app.UseAuthorization();
