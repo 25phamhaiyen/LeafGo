@@ -13,11 +13,15 @@ class LocationModel {
 
   LatLng get toLatLng => LatLng(lat, lng);
 
+  bool get hasValidCoordinates {
+    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  }
+
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
       fullAddress: json['fullAddress'] ?? json['display_name'] ?? '',
-      lat: double.parse(json['lat'].toString()),
-      lng: double.parse(json['lon'] ?? json['lng'].toString()),
+      lat: double.tryParse(json['lat'].toString()) ?? 0.0,
+      lng: double.tryParse((json['lon'] ?? json['lng']).toString()) ?? 0.0,
     );
   }
 }

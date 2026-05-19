@@ -66,6 +66,7 @@ class BookingState {
   final LatLng? driverLocation;
   final bool isLoading;
   final String? error;
+  final int resetCounter;
 
   BookingState({
     this.vehicleTypes = const [],
@@ -79,6 +80,7 @@ class BookingState {
     this.driverLocation,
     this.isLoading = false,
     this.error,
+    this.resetCounter = 0,
   });
 
   BookingState copyWith({
@@ -93,6 +95,7 @@ class BookingState {
     LatLng? driverLocation,
     bool? isLoading,
     String? error,
+    int? resetCounter,
     bool clearPickup = false,
     bool clearDropoff = false,
   }) {
@@ -108,6 +111,7 @@ class BookingState {
       driverLocation: driverLocation ?? this.driverLocation,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      resetCounter: resetCounter ?? this.resetCounter,
     );
   }
 }
@@ -119,6 +123,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final SignalRService signalRService;
   final AuthLocalDataSource authLocalDataSource;
   String? _token;
+  int _pickupLocationVersion = 0;
+  int _dropoffLocationVersion = 0;
 
   BookingBloc({
     required this.repository,
@@ -150,6 +156,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(BookingState(
         vehicleTypes: state.vehicleTypes,
         selectedVehicleTypeId: state.selectedVehicleTypeId,
+        resetCounter: state.resetCounter + 1,
       ));
     });
     
@@ -176,7 +183,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       add(BookingUpdateStatus(data['status']));
     });
     signalRService.onDriverLocationUpdated((data) {
-      add(BookingUpdateDriverLocation(LatLng(data['latitude'], data['longitude'])));
+      final lat = double.tryParse(data['latitude'].toString());
+      final lng = double.tryParse(data['longitude'].toString());
+      if (lat != null && lng != null && _isValidLatLng(lat, lng)) {
+        add(BookingUpdateDriverLocation(LatLng(lat, lng)));
+      }
     });
     signalRService.onRideCompleted((data) => add(BookingUpdateStatus('Completed')));
     signalRService.onRideCancelled((data) => add(BookingUpdateStatus('Cancelled')));
@@ -206,8 +217,16 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   Future<void> _onSearchLocation(BookingSearchLocation event, Emitter<BookingState> emit) async {
+    if (event.isPickup) {
+      _pickupLocationVersion++;
+    } else {
+      _dropoffLocationVersion++;
+    }
+
     if (event.query.trim().isEmpty) {
-      emit(state.copyWith(searchResults: []));
+      emit(event.isPickup
+          ? state.copyWith(clearPickup: true, searchResults: [])
+          : state.copyWith(clearDropoff: true, searchResults: []));
       return;
     }
     
@@ -225,6 +244,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   void _onSelectLocation(BookingSelectLocation event, Emitter<BookingState> emit) {
+    if (event.isPickup) {
+      _pickupLocationVersion++;
+    } else {
+      _dropoffLocationVersion++;
+    }
+
     final updatedState = event.isPickup
         ? state.copyWith(pickupLocation: event.location, searchResults: [])
         : state.copyWith(dropoffLocation: event.location, searchResults: []);
@@ -237,11 +262,14 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   Future<void> _onGetCurrentLocation(BookingGetCurrentLocation event, Emitter<BookingState> emit) async {
+    final locationVersionAtStart = event.isPickup ? _pickupLocationVersion : _dropoffLocationVersion;
     emit(state.copyWith(isLoading: true));
     try {
       final pos = await locationService.getCurrentPosition();
       final loc = await locationService.reverseGeocode(pos.latitude, pos.longitude);
       if (loc != null) {
+        final locationVersionNow = event.isPickup ? _pickupLocationVersion : _dropoffLocationVersion;
+        if (locationVersionNow != locationVersionAtStart) return;
         add(BookingSelectLocation(loc, event.isPickup));
       }
     } catch (e) {
@@ -388,7 +416,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   void _onUpdateDriverLocation(BookingUpdateDriverLocation event, Emitter<BookingState> emit) {
+    if (!_isValidLatLng(event.location.latitude, event.location.longitude)) return;
     emit(state.copyWith(driverLocation: event.location));
+  }
+
+  bool _isValidLatLng(double lat, double lng) {
+    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   }
 
   EventTransformer<Event> _debounce<Event>(Duration duration) {

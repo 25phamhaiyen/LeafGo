@@ -55,16 +55,23 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         }
         if (state.currentRide != null && _routePoints.isEmpty && !_isFetchingRoute) {
           _fetchRoute(state.currentRide!);
-          _mapController.move(LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude), 14);
+          final pickupPoint = LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude);
+          if (_isValidLatLng(pickupPoint)) {
+            _mapController.move(pickupPoint, 14);
+          }
         }
         if (state.currentRide == null && _routePoints.isNotEmpty) {
           setState(() => _routePoints = []);
         }
       },
       builder: (context, state) {
+        final routePoints = _routePoints.where(_isValidLatLng).toList();
         LatLng centerCoords = const LatLng(10.8458, 106.7945); // Default UTC
         if (state.currentRide != null) {
-          centerCoords = LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude);
+          final pickupPoint = LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude);
+          if (_isValidLatLng(pickupPoint)) {
+            centerCoords = pickupPoint;
+          }
         }
 
         return Scaffold(
@@ -81,15 +88,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    subdomains: const ['a', 'b', 'c'],
-                    userAgentPackageName: 'com.example.leafgo_app',
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.leafgo.app',
                   ),
-                  if (_routePoints.isNotEmpty)
+                  if (routePoints.isNotEmpty)
                     PolylineLayer(
                       polylines: [
                         Polyline(
-                          points: _routePoints,
+                          points: routePoints,
                           strokeWidth: 5,
                           color: primaryColor,
                         ),
@@ -97,7 +103,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     ),
                   MarkerLayer(
                     markers: [
-                      if (state.currentRide != null) ...[
+                      if (state.currentRide != null &&
+                          _isValidLatLng(LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude)) &&
+                          _isValidLatLng(LatLng(state.currentRide!.destinationLatitude, state.currentRide!.destinationLongitude))) ...[
                         Marker(
                           point: LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude),
                           width: 40,
@@ -252,6 +260,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         padding: EdgeInsets.zero,
       ),
     );
+  }
+
+  bool _isValidLatLng(LatLng point) {
+    return point.latitude >= -90 &&
+        point.latitude <= 90 &&
+        point.longitude >= -180 &&
+        point.longitude <= 180;
   }
 
   Widget _buildPanelContent(DriverState state, Color primaryColor) {
@@ -420,14 +435,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Widget _buildActiveRidePanel(RideModel ride, Color primaryColor, bool isLoading) {
-    String actionText = 'Đã đến điểm đón';
-    String nextStatus = 'DriverArrived';
-    String descText = 'Hãy di chuyển đến vị trí đón hành khách.';
+    String actionText = 'Bat dau di don';
+    String nextStatus = 'DriverArriving';
+    String descText = 'Hay bat dau di chuyen den vi tri don hanh khach.';
 
     if (ride.status == 'Accepted') {
-      actionText = 'Tôi đã đến điểm đón';
+      actionText = 'Bat dau di don';
+      nextStatus = 'DriverArriving';
+      descText = 'Hay bat dau di chuyen den vi tri don hanh khach.';
+    } else if (ride.status == 'DriverArriving') {
+      actionText = 'Toi da den diem don';
       nextStatus = 'DriverArrived';
-      descText = 'Hãy di chuyển đến vị trí đón hành khách.';
+      descText = 'Xac nhan khi ban da den dung diem don.';
     } else if (ride.status == 'DriverArrived') {
       actionText = 'Bắt đầu hành trình';
       nextStatus = 'InProgress';
@@ -493,7 +512,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     context.read<DriverBloc>().add(
                           DriverUpdateRideStatus(
                             nextStatus,
-                            finalPrice: nextStatus == 'Completed' ? ride.estimatedPrice : 0.0,
+                            finalPrice: nextStatus == 'Completed' ? ride.estimatedPrice : null,
                           ),
                         );
                   },
@@ -538,6 +557,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     switch (status) {
       case 'Accepted':
         return 'Đang đi đón khách';
+      case 'DriverArriving':
+        return 'Dang di don khach';
       case 'DriverArrived':
         return 'Đã tới điểm đón';
       case 'InProgress':

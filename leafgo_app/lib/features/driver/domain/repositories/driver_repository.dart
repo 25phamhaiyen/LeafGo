@@ -7,7 +7,7 @@ abstract class DriverRepository {
   Future<void> updateLocation(double lat, double lng, String token);
   Future<List<dynamic>> getPendingRides(double lat, double lng, int radius, String token);
   Future<Map<String, dynamic>> acceptRide(String rideId, String version, String token);
-  Future<void> updateRideStatus(String rideId, String status, double finalPrice, String token);
+  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token);
   Future<RideModel?> getCurrentRide(String token);
   Future<DriverStatsModel> getStatistics(String token);
   Future<DriverVehicleModel?> getVehicle(String token);
@@ -32,7 +32,7 @@ class DriverRepositoryImpl implements DriverRepository {
   Future<Map<String, dynamic>> acceptRide(String rideId, String version, String token) => remote.acceptRide(rideId, version, token);
 
   @override
-  Future<void> updateRideStatus(String rideId, String status, double finalPrice, String token) => remote.updateRideStatus(rideId, status, finalPrice, token);
+  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token) => remote.updateRideStatus(rideId, status, finalPrice, token);
 
   @override
   Future<RideModel?> getCurrentRide(String token) => remote.getCurrentRide(token);
