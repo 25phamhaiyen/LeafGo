@@ -76,11 +76,15 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
         role: user.role,
+        avatar: user.avatar,
+        isActive: user.isActive,
+        isOnline: user.isOnline,
+        createdAt: user.createdAt,
         accessToken: accessToken,
         refreshToken: refreshToken,
         expiresAt: expiresAt,
-        isOnline: user.isOnline,
       );
       await _prefs.setString(_keyUser, json.encode(updated.toJson()));
     }
