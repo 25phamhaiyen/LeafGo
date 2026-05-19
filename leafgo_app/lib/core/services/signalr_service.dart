@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 class SignalRService {
   HubConnection? _hubConnection;
   final String baseUrl;
+  static const String _hubPath = '/hubs/ride';
 
   SignalRService({required this.baseUrl});
 
@@ -15,10 +16,11 @@ class SignalRService {
     final httpOptions = HttpConnectionOptions(
       accessTokenFactory: () async => accessToken ?? '',
       logMessageContent: true,
+      transport: kIsWeb ? HttpTransportType.LongPolling : null,
     );
 
     _hubConnection = HubConnectionBuilder()
-        .withUrl('$baseUrl/rideHub', options: httpOptions)
+        .withUrl('$baseUrl$_hubPath', options: httpOptions)
         .withAutomaticReconnect()
         .build();
 

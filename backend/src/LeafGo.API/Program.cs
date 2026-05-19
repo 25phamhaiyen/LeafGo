@@ -126,6 +126,19 @@ namespace LeafGo.API
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            path.StartsWithSegments("/hubs/ride"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = context =>
                     {
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
@@ -156,9 +169,28 @@ namespace LeafGo.API
                 options.AddPolicy("AllowFlutterWeb", policy =>
                 {
                     policy
-                        .AllowAnyOrigin()
+                        .SetIsOriginAllowed(origin =>
+                        {
+                            if (string.IsNullOrWhiteSpace(origin))
+                            {
+                                return false;
+                            }
+
+                            var configuredOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Split(',')
+                                ?? Array.Empty<string>();
+
+                            if (configuredOrigins.Any(allowed =>
+                                string.Equals(allowed.Trim(), origin, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                return true;
+                            }
+
+                            return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+                                (uri.Host == "localhost" || uri.Host == "127.0.0.1");
+                        })
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
 

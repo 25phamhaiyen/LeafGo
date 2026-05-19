@@ -8,7 +8,7 @@ abstract class DriverRemoteDataSource {
   Future<void> updateLocation(double lat, double lng, String token);
   Future<List<dynamic>> getPendingRides(double lat, double lng, int radius, String token);
   Future<Map<String, dynamic>> acceptRide(String rideId, String version, String token);
-  Future<void> updateRideStatus(String rideId, String status, double finalPrice, String token);
+  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token);
   Future<RideModel?> getCurrentRide(String token);
   Future<DriverStatsModel> getStatistics(String token);
   Future<DriverVehicleModel?> getVehicle(String token);
@@ -92,18 +92,20 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   }
 
   @override
-  Future<void> updateRideStatus(String rideId, String status, double finalPrice, String token) async {
+  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token) async {
+    final body = <String, dynamic>{
+      'rideId': rideId,
+      'status': status,
+      if (finalPrice != null) 'finalPrice': finalPrice,
+    };
+
     final response = await client.put(
       Uri.parse('$baseUrl/api/Drivers/update-ride-status'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({
-        'rideId': rideId,
-        'status': status,
-        'finalPrice': finalPrice,
-      }),
+      body: json.encode(body),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to update ride status: ${response.body}');

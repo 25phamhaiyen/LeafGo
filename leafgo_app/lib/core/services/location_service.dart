@@ -19,7 +19,12 @@ class LocationService {
     if (_orsApiKey.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('$_orsApiUrl/geocode/search?api_key=$_orsApiKey&text=$query&boundary.country=VN&size=5'),
+          Uri.parse('$_orsApiUrl/geocode/search').replace(queryParameters: {
+            'api_key': _orsApiKey,
+            'text': query,
+            'boundary.country': 'VN',
+            'size': '5',
+          }),
           headers: {
             'Accept-Language': 'vi',
             'User-Agent': 'LeafGoApp/1.0 (com.leafgo.app)',
@@ -36,10 +41,10 @@ class LocationService {
               final coords = geom['coordinates'] ?? [0.0, 0.0];
               return LocationModel(
                 fullAddress: props['label'] ?? props['name'] ?? '',
-                lat: double.parse(coords[1].toString()),
-                lng: double.parse(coords[0].toString()),
+                lat: double.tryParse(coords[1].toString()) ?? 0.0,
+                lng: double.tryParse(coords[0].toString()) ?? 0.0,
               );
-            }).toList();
+            }).where((location) => location.hasValidCoordinates).toList();
           } else {
             print('OpenRouteService returned 0 features. Falling back to Nominatim.');
           }
@@ -51,7 +56,13 @@ class LocationService {
 
     // 2. Fallback to Nominatim (Public, no API key required)
     final response = await http.get(
-      Uri.parse('$_nominatimUrl/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=vn'),
+      Uri.parse('$_nominatimUrl/search').replace(queryParameters: {
+        'q': query,
+        'format': 'json',
+        'addressdetails': '1',
+        'limit': '5',
+        'countrycodes': 'vn',
+      }),
       headers: {
         'Accept-Language': 'vi',
         'User-Agent': 'LeafGoApp/1.0 (com.leafgo.app)',
@@ -60,14 +71,24 @@ class LocationService {
 
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
-      return data.map((item) => LocationModel.fromJson(item)).toList();
+      return data
+          .map((item) => LocationModel.fromJson(item))
+          .where((location) => location.hasValidCoordinates)
+          .toList();
     }
     return [];
   }
 
   Future<List<LatLng>> getRoute(LocationModel pickup, LocationModel dropoff) async {
+    if (!pickup.hasValidCoordinates || !dropoff.hasValidCoordinates) {
+      return [];
+    }
+
     final response = await http.get(
-      Uri.parse('$_osrmUrl/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?overview=full&geometries=polyline'),
+      Uri.parse('$_osrmUrl/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}').replace(queryParameters: {
+        'overview': 'full',
+        'geometries': 'geojson',
+      }),
       headers: {
         'User-Agent': 'LeafGoApp/1.0 (com.leafgo.app)',
       },
@@ -76,8 +97,21 @@ class LocationService {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['routes'] != null && data['routes'].isNotEmpty) {
-        final String encodedPolyline = data['routes'][0]['geometry'];
-        return _decodePolyline(encodedPolyline);
+        final coordinates = data['routes'][0]['geometry']?['coordinates'];
+        if (coordinates is List) {
+          return coordinates
+              .whereType<List>()
+              .map((coords) {
+                if (coords.length < 2) return null;
+                final lat = double.tryParse(coords[1].toString());
+                final lng = double.tryParse(coords[0].toString());
+                if (lat == null || lng == null) return null;
+                return LatLng(lat, lng);
+              })
+              .whereType<LatLng>()
+              .where(_isValidLatLng)
+              .toList();
+        }
       }
     }
     return [];
@@ -125,26 +159,24 @@ class LocationService {
       }
     } catch (_) {}
 
-    return Position(
-      latitude: 10.8458,
-      longitude: 106.7945,
-      timestamp: DateTime.now(),
-      accuracy: 1.0,
-      altitude: 0.0,
-      altitudeAccuracy: 0.0,
-      heading: 0.0,
-      headingAccuracy: 0.0,
-      speed: 0.0,
-      speedAccuracy: 0.0,
-    );
+    return Future.error('Could not determine current location.');
   }
 
   Future<LocationModel?> reverseGeocode(double lat, double lng) async {
+    if (!_isValidLatLng(LatLng(lat, lng))) {
+      return null;
+    }
+
     // 1. Try using OpenRouteService if API Key is configured
     if (_orsApiKey.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('$_orsApiUrl/geocode/reverse?api_key=$_orsApiKey&point.lon=$lng&point.lat=$lat&size=1'),
+          Uri.parse('$_orsApiUrl/geocode/reverse').replace(queryParameters: {
+            'api_key': _orsApiKey,
+            'point.lon': lng.toString(),
+            'point.lat': lat.toString(),
+            'size': '1',
+          }),
           headers: {
             'Accept-Language': 'vi',
             'User-Agent': 'LeafGoApp/1.0 (com.leafgo.app)',
@@ -157,12 +189,10 @@ class LocationService {
           if (features.isNotEmpty) {
             final first = features.first;
             final props = first['properties'] ?? {};
-            final geom = first['geometry'] ?? {};
-            final coords = geom['coordinates'] ?? [lng, lat];
             return LocationModel(
               fullAddress: props['label'] ?? props['name'] ?? '',
-              lat: double.parse(coords[1].toString()),
-              lng: double.parse(coords[0].toString()),
+              lat: lat,
+              lng: lng,
             );
           }
         }
@@ -173,7 +203,11 @@ class LocationService {
 
     // 2. Fallback to Nominatim (Public, no API key required)
     final response = await http.get(
-      Uri.parse('$_nominatimUrl/reverse?lat=$lat&lon=$lng&format=json'),
+      Uri.parse('$_nominatimUrl/reverse').replace(queryParameters: {
+        'lat': lat.toString(),
+        'lon': lng.toString(),
+        'format': 'json',
+      }),
       headers: {
         'Accept-Language': 'vi',
         'User-Agent': 'LeafGoApp/1.0 (com.leafgo.app)',
@@ -182,42 +216,19 @@ class LocationService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return LocationModel.fromJson(data);
+      return LocationModel(
+        fullAddress: data['display_name'] ?? '',
+        lat: lat,
+        lng: lng,
+      );
     }
     return null;
   }
 
-  // Helper to decode Google Polyline algorithm
-  List<LatLng> _decodePolyline(String str) {
-    var index = 0;
-    var lat = 0;
-    var lng = 0;
-    List<LatLng> polyline = [];
-
-    while (index < str.length) {
-      int b;
-      int shift = 0;
-      int result = 0;
-      do {
-        b = str.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-
-      shift = 0;
-      result = 0;
-      do {
-        b = str.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-
-      polyline.add(LatLng(lat / 1E5, lng / 1E5));
-    }
-    return polyline;
+  bool _isValidLatLng(LatLng point) {
+    return point.latitude >= -90 &&
+        point.latitude <= 90 &&
+        point.longitude >= -180 &&
+        point.longitude <= 180;
   }
 }

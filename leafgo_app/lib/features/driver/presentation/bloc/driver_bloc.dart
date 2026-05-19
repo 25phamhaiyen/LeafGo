@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:leafgo_app/features/booking/data/models/booking_models.dart';
 import 'package:leafgo_app/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
@@ -23,8 +22,8 @@ class DriverAcceptRide extends DriverEvent {
 }
 class DriverUpdateRideStatus extends DriverEvent {
   final String status;
-  final double finalPrice;
-  DriverUpdateRideStatus(this.status, {this.finalPrice = 0.0});
+  final double? finalPrice;
+  DriverUpdateRideStatus(this.status, {this.finalPrice});
 }
 class DriverUpdateVehicle extends DriverEvent {
   final String vehicleTypeId;
@@ -207,23 +206,7 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     try {
       final token = await _getToken();
       if (token == null) return;
-      Position pos;
-      try {
-        pos = await locationService.getCurrentPosition();
-      } catch (_) {
-        pos = Position(
-          latitude: 10.8458,
-          longitude: 106.7945,
-          timestamp: DateTime.now(),
-          accuracy: 1.0,
-          altitude: 0.0,
-          altitudeAccuracy: 0.0,
-          heading: 0.0,
-          headingAccuracy: 0.0,
-          speed: 0.0,
-          speedAccuracy: 0.0,
-        );
-      }
+      final pos = await locationService.getCurrentPosition();
       final rides = await repository.getPendingRides(pos.latitude, pos.longitude, 5, token);
       emit(state.copyWith(pendingRides: rides));
     } catch (_) {}

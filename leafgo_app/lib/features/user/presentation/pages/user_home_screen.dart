@@ -17,6 +17,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destController = TextEditingController();
   bool _isPickupActive = true;
+  int _lastHandledResetCounter = 0;
 
   void _swapLocations() {
     final state = context.read<BookingBloc>().state;
@@ -45,20 +46,23 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!)));
         }
         
-        // Auto-populate or clear controllers based on BLoC state
+        if (state.resetCounter != _lastHandledResetCounter) {
+          _lastHandledResetCounter = state.resetCounter;
+          _pickupController.clear();
+          _destController.clear();
+        }
+
+        // Auto-populate controllers from confirmed selections. Do not clear them
+        // while searching, because search temporarily clears the selected location.
         if (state.pickupLocation != null && _pickupController.text != state.pickupLocation!.fullAddress) {
           _pickupController.text = state.pickupLocation!.fullAddress;
-        } else if (state.pickupLocation == null && _pickupController.text.isNotEmpty) {
-          _pickupController.clear();
         }
 
         if (state.dropoffLocation != null && _destController.text != state.dropoffLocation!.fullAddress) {
           _destController.text = state.dropoffLocation!.fullAddress;
-        } else if (state.dropoffLocation == null && _destController.text.isNotEmpty) {
-          _destController.clear();
         }
 
-        if (state.pickupLocation != null) {
+        if (state.pickupLocation != null && state.pickupLocation!.hasValidCoordinates) {
           _mapController.move(state.pickupLocation!.toLatLng, 15);
         }
       },
@@ -201,6 +205,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             child: DropdownButtonHideUnderline(
               child: DropdownButtonFormField<String>(
                 value: state.selectedVehicleTypeId,
+                isExpanded: true,
                 decoration: const InputDecoration(border: InputBorder.none),
                 hint: const Text('Chọn loại phương tiện', style: TextStyle(fontSize: 13)),
                 items: state.vehicleTypes.map((type) {
@@ -208,6 +213,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     value: type.id,
                     child: Text(
                       '${type.name} - ${type.pricePerKm.toInt()}đ/km',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 13, color: Colors.black87),
                     ),
                   );
@@ -594,6 +601,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Widget _buildMap() {
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
+        final routeCoordinates = state.routeCoordinates.where(_isValidLatLng).toList();
         return FlutterMap(
           mapController: _mapController,
           options: const MapOptions(
@@ -605,11 +613,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.leafgo.app',
             ),
-            if (state.routeCoordinates.isNotEmpty)
+            if (routeCoordinates.isNotEmpty)
               PolylineLayer(
                 polylines: [
                   Polyline(
-                    points: state.routeCoordinates,
+                    points: routeCoordinates,
                     color: const Color(0xFF10B981),
                     strokeWidth: 5,
                   ),
@@ -617,19 +625,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
             MarkerLayer(
               markers: [
-                if (state.pickupLocation != null)
+                if (state.pickupLocation != null && state.pickupLocation!.hasValidCoordinates)
                   Marker(
                     point: state.pickupLocation!.toLatLng,
                     width: 36, height: 36,
                     child: const Icon(Icons.location_on, color: Colors.green, size: 36),
                   ),
-                if (state.dropoffLocation != null)
+                if (state.dropoffLocation != null && state.dropoffLocation!.hasValidCoordinates)
                   Marker(
                     point: state.dropoffLocation!.toLatLng,
                     width: 36, height: 36,
                     child: const Icon(Icons.location_on, color: Colors.red, size: 36),
                   ),
-                if (state.driverLocation != null)
+                if (state.driverLocation != null && _isValidLatLng(state.driverLocation!))
                   Marker(
                     point: state.driverLocation!,
                     width: 36, height: 36,
@@ -641,6 +649,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         );
       },
     );
+  }
+
+  bool _isValidLatLng(LatLng point) {
+    return point.latitude >= -90 &&
+        point.latitude <= 90 &&
+        point.longitude >= -180 &&
+        point.longitude <= 180;
   }
 
   Widget _buildLocationInput({required TextEditingController controller, required String hint, required Color iconColor, required bool isPickup}) {
