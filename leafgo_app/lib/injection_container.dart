@@ -56,10 +56,10 @@ Future<void> setupDI() async {
     () => AuthRemoteDataSourceImpl(
       client: sl<http.Client>(),
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
@@ -79,10 +79,10 @@ Future<void> setupDI() async {
     () => AdminRemoteDataSourceImpl(
       client: sl<http.Client>(),
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
@@ -122,10 +122,10 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<SignalRService>(
     () => SignalRService(
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
@@ -133,10 +133,10 @@ Future<void> setupDI() async {
     () => BookingRemoteDataSourceImpl(
       client: sl<http.Client>(),
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
@@ -149,10 +149,10 @@ Future<void> setupDI() async {
     () => UserRemoteDataSourceImpl(
       client: sl<http.Client>(),
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
@@ -181,10 +181,10 @@ Future<void> setupDI() async {
     () => DriverRemoteDataSourceImpl(
       client: sl<http.Client>(),
       baseUrl: kIsWeb
-          ? 'http://localhost:8000'
+          ? 'http://127.0.0.1:8000'
           : (defaultTargetPlatform == TargetPlatform.android
               ? 'http://10.0.2.2:8000'
-              : 'http://localhost:8000'),
+              : 'http://127.0.0.1:8000'),
     ),
   );
 
