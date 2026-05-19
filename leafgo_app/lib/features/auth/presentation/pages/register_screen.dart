@@ -18,10 +18,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  
-  String _selectedRole = 'User'; // Default role
-  final List<String> _roles = ['User', 'Driver']; // Available roles
-  
+
+  String _selectedRole = 'User';
+  final List<String> _roles = ['User', 'Driver'];
+
   bool _obscure = true;
 
   @override
@@ -37,20 +37,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     context.read<AuthBloc>().add(
-      AuthRegisterRequested(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text,
-        fullName: _nameCtrl.text.trim(),
-        phoneNumber: _phoneCtrl.text.trim(),
-        role: _selectedRole, // Pass selected role
-      ),
-    );
+          AuthRegisterRequested(
+            email: _emailCtrl.text.trim(),
+            password: _passCtrl.text,
+            fullName: _nameCtrl.text.trim(),
+            phoneNumber: _phoneCtrl.text.trim(),
+            role: _selectedRole,
+          ),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF10B981);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Tạo tài khoản')),
+      backgroundColor: Colors.white,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -64,119 +66,218 @@ class _RegisterScreenState extends State<RegisterScreen> {
         builder: (context, state) {
           final loading = state is AuthLoading;
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _field(
-                    _nameCtrl,
-                    'Họ và tên',
-                    Icons.person_outlined,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập họ và tên' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _field(
-                    _emailCtrl,
-                    'Email',
-                    Icons.email_outlined,
-                    type: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Bắt buộc nhập email';
-                      if (!v.contains('@')) return 'Email không hợp lệ';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _field(
-                    _phoneCtrl,
-                    'Số điện thoại',
-                    Icons.phone_outlined,
-                    type: TextInputType.phone,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập số điện thoại' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Role Selection Dropdown
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    decoration: const InputDecoration(
-                      labelText: 'Vai trò',
-                      prefixIcon: Icon(Icons.badge_outlined),
-                      border: OutlineInputBorder(),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  height: 250,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
                     ),
-                    items: _roles.map((role) {
-                      return DropdownMenuItem(
-                        value: role,
-                        child: Text(role == 'User' ? 'Người dùng' : 'Tài xế'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedRole = value);
-                      }
-                    },
                   ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _passCtrl,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      labelText: 'Mật khẩu',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscure ? Icons.visibility : Icons.visibility_off,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                        child: Icon(Icons.eco, size: 48, color: primaryColor),
                       ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Bắt buộc nhập mật khẩu';
-                      if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Xác nhận mật khẩu',
-                      prefixIcon: Icon(Icons.lock_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) =>
-                        v != _passCtrl.text ? 'Mật khẩu không khớp' : null,
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: loading ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2D7A4F),
-                      minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Tạo tài khoản',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Tham gia Leaf Go ngay hôm nay!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Form Card
+                Transform.translate(
+                  offset: const Offset(0, -30),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    child: loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _field(
+                            _nameCtrl,
+                            'Họ và tên',
+                            Icons.person_outline,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập Họ và tên' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          _field(
+                            _emailCtrl,
+                            'Email',
+                            Icons.email_outlined,
+                            type: TextInputType.emailAddress,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Bắt buộc nhập Email';
+                              if (!v.contains('@')) return 'Email không hợp lệ';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _field(
+                            _phoneCtrl,
+                            'Số điện thoại',
+                            Icons.phone_outlined,
+                            type: TextInputType.phone,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập Số điện thoại' : null,
+                          ),
+                          const SizedBox(height: 16),
+
+                          DropdownButtonFormField<String>(
+                            value: _selectedRole,
+                            decoration: InputDecoration(
+                              hintText: 'Vai trò',
+                              prefixIcon: const Icon(Icons.badge_outlined),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
                             ),
-                          )
-                        : const Text('Tạo tài khoản'),
+                            items: _roles.map((role) {
+                              return DropdownMenuItem(
+                                value: role,
+                                child: Text(role == 'User' ? 'Người dùng' : 'Tài xế'),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedRole = value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            controller: _passCtrl,
+                            obscureText: _obscure,
+                            decoration: InputDecoration(
+                              hintText: 'Mật khẩu',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                                onPressed: () => setState(() => _obscure = !_obscure),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Bắt buộc nhập Mật khẩu';
+                              if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _confirmCtrl,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              hintText: 'Xác nhận mật khẩu',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                            ),
+                            validator: (v) => v != _passCtrl.text ? 'Mật khẩu không khớp' : null,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: loading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(56),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: loading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Tạo tài khoản', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text("Đã có tài khoản? ", style: TextStyle(color: Colors.grey.shade600)),
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Text(
+                                  'Đăng nhập ngay',
+                                  style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -195,11 +296,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: ctrl,
       keyboardType: type,
       decoration: InputDecoration(
-        labelText: label,
+        hintText: label,
         prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
       ),
       validator: validator,
     );
   }
 }
+

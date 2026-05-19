@@ -25,7 +25,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     return BlocProvider(
       create: (context) {
         final authState = context.read<AuthBloc>().state;
-        final token = (authState is AuthAuthenticated) ? authState.user.accessToken : '';
+        final token = (authState is AuthAuthenticated)
+            ? (authState.user.accessToken ?? '')
+            : '';
         return sl<AdminBloc>()..add(AdminFetchUsers(accessToken: token));
       },
       child: Scaffold(
@@ -34,7 +36,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(100),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 children: [
                   TextField(
@@ -46,7 +51,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         icon: const Icon(Icons.send),
                         onPressed: () => _onSearch(context),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                     onSubmitted: (_) => _onSearch(context),
@@ -83,8 +90,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   final user = users[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: user.avatar != null ? NetworkImage(user.avatar!) : null,
-                      child: user.avatar == null ? Text(user.fullName[0].toUpperCase()) : null,
+                      backgroundImage: user.avatar != null
+                          ? NetworkImage(user.avatar!)
+                          : null,
+                      child: user.avatar == null
+                          ? Text(user.fullName[0].toUpperCase())
+                          : null,
                     ),
                     title: Text(user.fullName),
                     subtitle: Text('${user.role} • ${user.phoneNumber}'),
@@ -126,11 +137,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   void _onSearch(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
-    final token = (authState is AuthAuthenticated) ? authState.user.accessToken : '';
-    context.read<AdminBloc>().add(AdminFetchUsers(
-      accessToken: token,
-      search: _searchCtrl.text,
-      role: _selectedRole,
-    ));
+    final token = (authState is AuthAuthenticated)
+        ? (authState.user.accessToken ?? '')
+        : '';
+    context.read<AdminBloc>().add(
+      AdminFetchUsers(
+        accessToken: token,
+        search: _searchCtrl.text,
+        role: _selectedRole,
+      ),
+    );
   }
 }

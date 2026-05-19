@@ -8,6 +8,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
+import 'package:leafgo_app/features/admin/data/datasources/admin_remote_datasource.dart';
+import 'package:leafgo_app/features/admin/data/repositories/admin_repository_impl.dart';
+import 'package:leafgo_app/features/admin/domain/repositories/admin_repository.dart';
 import 'package:leafgo_app/features/auth/domain/usecases/auth_usecases.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,11 +21,27 @@ import 'features/auth/domain/repositories/auth_repository.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 
-// Features → Admin
-import 'features/admin/data/datasources/admin_remote_datasource.dart';
-import 'features/admin/domain/repositories/admin_repository.dart';
-import 'features/admin/data/repositories/admin_repository_impl.dart';
 import 'features/admin/presentation/bloc/admin_bloc.dart';
+import 'features/auth/presentation/bloc/user_bloc.dart';
+
+// Features → Booking
+import 'features/booking/data/datasources/booking_remote_datasource.dart';
+import 'features/booking/domain/repositories/booking_repository.dart';
+
+// Features → User Profile & History
+import 'features/auth/data/datasources/user_remote_datasource.dart';
+import 'features/auth/domain/repositories/user_repository.dart';
+
+// Features → Driver
+import 'features/driver/data/datasources/driver_remote_datasource.dart';
+import 'features/driver/domain/repositories/driver_repository.dart';
+import 'features/driver/presentation/bloc/driver_bloc.dart';
+
+import 'features/booking/presentation/bloc/booking_bloc.dart';
+
+// Core → Services
+import 'core/services/location_service.dart';
+import 'core/services/signalr_service.dart';
 
 final sl = GetIt.instance;
 
@@ -97,6 +116,90 @@ Future<void> setupDI() async {
   );
 
   sl.registerFactory(() => AdminBloc(repository: sl()));
+
+  // ── Booking Feature ────────────────────────────────────────
+  sl.registerLazySingleton<LocationService>(() => LocationService());
+  sl.registerLazySingleton<SignalRService>(
+    () => SignalRService(
+      baseUrl: kIsWeb
+          ? 'http://localhost:8000'
+          : (defaultTargetPlatform == TargetPlatform.android
+              ? 'http://10.0.2.2:8000'
+              : 'http://localhost:8000'),
+    ),
+  );
+
+  sl.registerLazySingleton<BookingRemoteDataSource>(
+    () => BookingRemoteDataSourceImpl(
+      client: sl<http.Client>(),
+      baseUrl: kIsWeb
+          ? 'http://localhost:8000'
+          : (defaultTargetPlatform == TargetPlatform.android
+              ? 'http://10.0.2.2:8000'
+              : 'http://localhost:8000'),
+    ),
+  );
+
+  sl.registerLazySingleton<BookingRepository>(
+    () => BookingRepositoryImpl(remote: sl<BookingRemoteDataSource>()),
+  );
+
+  // ── User Profile Feature ───────────────────────────────────
+  sl.registerLazySingleton<UserRemoteDataSource>(
+    () => UserRemoteDataSourceImpl(
+      client: sl<http.Client>(),
+      baseUrl: kIsWeb
+          ? 'http://localhost:8000'
+          : (defaultTargetPlatform == TargetPlatform.android
+              ? 'http://10.0.2.2:8000'
+              : 'http://localhost:8000'),
+    ),
+  );
+
+  sl.registerLazySingleton<UserRepository>(
+    () => UserRepositoryImpl(remote: sl<UserRemoteDataSource>()),
+  );
+
+  sl.registerFactory(
+    () => UserBloc(
+      repository: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => BookingBloc(
+      repository: sl(),
+      locationService: sl(),
+      signalRService: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+
+  // ── Driver Feature ─────────────────────────────────────────
+  sl.registerLazySingleton<DriverRemoteDataSource>(
+    () => DriverRemoteDataSourceImpl(
+      client: sl<http.Client>(),
+      baseUrl: kIsWeb
+          ? 'http://localhost:8000'
+          : (defaultTargetPlatform == TargetPlatform.android
+              ? 'http://10.0.2.2:8000'
+              : 'http://localhost:8000'),
+    ),
+  );
+
+  sl.registerLazySingleton<DriverRepository>(
+    () => DriverRepositoryImpl(remote: sl<DriverRemoteDataSource>()),
+  );
+
+  sl.registerFactory(
+    () => DriverBloc(
+      repository: sl(),
+      locationService: sl(),
+      signalRService: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
 }
 
 
