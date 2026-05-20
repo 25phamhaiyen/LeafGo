@@ -1,0 +1,483 @@
+GEt /api/Admin/users
+Parameters:
+Page
+integer($int32)
+(query)
+PageSize
+integer($int32)
+(query)
+Role
+string
+(query)
+Search
+string
+(query)
+IsActive
+boolean
+(query)
+IsOnline
+boolean
+(query)
+Response:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "items": [
+      {
+        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "email": "string",
+        "fullName": "string",
+        "phoneNumber": "string",
+        "role": "string",
+        "avatar": "string",
+        "isActive": true,
+        "isOnline": true,
+        "createdAt": "2026-05-20T08:56:16.991Z",
+        "vehicle": {
+          "licensePlate": "string",
+          "vehicleTypeName": "string",
+          "vehicleBrand": "string"
+        },
+        "stats": {
+          "totalRides": 0,
+          "totalSpent": 0,
+          "totalEarnings": 0,
+          "averageRating": 0
+        }
+      }
+    ],
+    "totalItems": 0,
+    "page": 0,
+    "pageSize": 0,
+    "totalPages": 0,
+    "hasPreviousPage": true,
+    "hasNextPage": true
+  },
+  "timestamp": "2026-05-20T08:56:16.991Z"
+}
+
+Post /api/Admin/users
+Request body:
+{
+  "email": "user@example.com",
+  "password": "string",
+  "fullName": "string",
+  "phoneNumber": "string",
+  "role": "User"
+}
+Responses:
+200: {
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "string",
+    "fullName": "string",
+    "phoneNumber": "string",
+    "role": "string",
+    "avatar": "string",
+    "isActive": true,
+    "isOnline": true,
+    "createdAt": "2026-05-20T08:58:32.923Z",
+    "vehicle": {
+      "licensePlate": "string",
+      "vehicleTypeName": "string",
+      "vehicleBrand": "string"
+    },
+    "stats": {
+      "totalRides": 0,
+      "totalSpent": 0,
+      "totalEarnings": 0,
+      "averageRating": 0
+    }
+  },
+  "timestamp": "2026-05-20T08:58:32.923Z"
+}
+400: {
+  "error": "string",
+  "details": {
+    "additionalProp1": "string",
+    "additionalProp2": "string",
+    "additionalProp3": "string"
+  },
+  "timestamp": "2026-05-20T08:58:32.924Z"
+}
+
+get /api/Admin/users/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "string",
+    "fullName": "string",
+    "phoneNumber": "string",
+    "role": "string",
+    "avatar": "string",
+    "isActive": true,
+    "isOnline": true,
+    "createdAt": "2026-05-20T08:59:52.748Z",
+    "vehicle": {
+      "licensePlate": "string",
+      "vehicleTypeName": "string",
+      "vehicleBrand": "string"
+    },
+    "stats": {
+      "totalRides": 0,
+      "totalSpent": 0,
+      "totalEarnings": 0,
+      "averageRating": 0
+    }
+  },
+  "timestamp": "2026-05-20T08:59:52.748Z"
+}
+
+put /api/Admin/users/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Request body:
+{
+  "fullName": "string",
+  "phoneNumber": "string",
+  "isActive": true
+}
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "string",
+    "fullName": "string",
+    "phoneNumber": "string",
+    "role": "string",
+    "avatar": "string",
+    "isActive": true,
+    "isOnline": true,
+    "createdAt": "2026-05-20T09:00:45.718Z",
+    "vehicle": {
+      "licensePlate": "string",
+      "vehicleTypeName": "string",
+      "vehicleBrand": "string"
+    },
+    "stats": {
+      "totalRides": 0,
+      "totalSpent": 0,
+      "totalEarnings": 0,
+      "averageRating": 0
+    }
+  },
+  "timestamp": "2026-05-20T09:00:45.718Z"
+}
+
+delete /api/Admin/users/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": "string",
+  "timestamp": "2026-05-20T09:01:45.617Z"
+}
+
+put /api/Admin/users/{id}/toggle-status
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Request body:
+{
+  "isActive": true
+}
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": "string",
+  "timestamp": "2026-05-20T09:02:25.370Z"
+}
+get /api/Admin/rides
+Parameters
+Name
+Page
+integer($int32)
+(query)
+PageSize
+integer($int32)
+(query)
+Status
+string
+(query)
+FromDate
+string($date-time)
+(query)
+ToDate
+string($date-time)
+(query)
+UserId
+string($uuid)
+(query)
+DriverId
+string($uuid)
+(query)
+esponses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "items": [
+      {
+        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "user": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "fullName": "string",
+          "phoneNumber": "string",
+          "email": "string"
+        },
+        "driver": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "fullName": "string",
+          "phoneNumber": "string",
+          "licensePlate": "string"
+        },
+        "pickupAddress": "string",
+        "destinationAddress": "string",
+        "distance": 0,
+        "estimatedPrice": 0,
+        "finalPrice": 0,
+        "status": "string",
+        "requestedAt": "2026-05-20T09:03:14.243Z",
+        "acceptedAt": "2026-05-20T09:03:14.243Z",
+        "completedAt": "2026-05-20T09:03:14.243Z",
+        "cancelledAt": "2026-05-20T09:03:14.243Z",
+        "cancellationReason": "string",
+        "cancelledBy": "string",
+        "rating": {
+          "rating": 0,
+          "comment": "string"
+        }
+      }
+    ],
+    "totalItems": 0,
+    "page": 0,
+    "pageSize": 0,
+    "totalPages": 0,
+    "hasPreviousPage": true,
+    "hasNextPage": true
+  },
+  "timestamp": "2026-05-20T09:03:14.243Z"
+}
+
+get /api/Admin/rides/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "user": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "fullName": "string",
+      "phoneNumber": "string",
+      "email": "string"
+    },
+    "driver": {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "fullName": "string",
+      "phoneNumber": "string",
+      "licensePlate": "string"
+    },
+    "pickupAddress": "string",
+    "destinationAddress": "string",
+    "distance": 0,
+    "estimatedPrice": 0,
+    "finalPrice": 0,
+    "status": "string",
+    "requestedAt": "2026-05-20T09:05:04.110Z",
+    "acceptedAt": "2026-05-20T09:05:04.110Z",
+    "completedAt": "2026-05-20T09:05:04.110Z",
+    "cancelledAt": "2026-05-20T09:05:04.110Z",
+    "cancellationReason": "string",
+    "cancelledBy": "string",
+    "rating": {
+      "rating": 0,
+      "comment": "string"
+    }
+  },
+  "timestamp": "2026-05-20T09:05:04.110Z"
+}
+
+get /api/Admin/statistics
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "totalUsers": 0,
+    "totalDrivers": 0,
+    "onlineDrivers": 0,
+    "totalCompletedRides": 0,
+    "totalPendingRides": 0,
+    "todayRides": 0,
+    "totalRevenue": 0,
+    "todayRevenue": 0,
+    "thisMonthRevenue": 0,
+    "topDrivers": [
+      {
+        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "fullName": "string",
+        "avatar": "string",
+        "totalRides": 0,
+        "totalEarnings": 0,
+        "averageRating": 0
+      }
+    ],
+    "revenueByMonth": [
+      {
+        "month": "string",
+        "revenue": 0,
+        "totalRides": 0
+      }
+    ],
+    "ridesByStatus": [
+      {
+        "status": "string",
+        "count": 0
+      }
+    ]
+  },
+  "timestamp": "2026-05-20T09:05:54.136Z"
+}
+
+get /api/Admin/vehicle-types
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "name": "string",
+      "basePrice": 0,
+      "pricePerKm": 0,
+      "description": "string",
+      "isActive": true,
+      "totalDrivers": 0,
+      "totalRides": 0
+    }
+  ],
+  "timestamp": "2026-05-20T09:06:27.522Z"
+}
+
+post /api/Admin/vehicle-types
+Request:
+{
+  "name": "string",
+  "basePrice": 0,
+  "pricePerKm": 0,
+  "description": "string"
+}
+Responses:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "name": "string",
+    "basePrice": 0,
+    "pricePerKm": 0,
+    "description": "string",
+    "isActive": true,
+    "totalDrivers": 0,
+    "totalRides": 0
+  },
+  "timestamp": "2026-05-20T09:07:00.258Z"
+}
+
+get /api/Admin/vehicle-types/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Response:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "name": "string",
+    "basePrice": 0,
+    "pricePerKm": 0,
+    "description": "string",
+    "isActive": true,
+    "totalDrivers": 0,
+    "totalRides": 0
+  },
+  "timestamp": "2026-05-20T09:07:38.186Z"
+}
+
+put /api/Admin/vehicle-types/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Request:
+{
+  "name": "string",
+  "basePrice": 0,
+  "pricePerKm": 0,
+  "description": "string",
+  "isActive": true
+}
+Response:
+{
+  "success": true,
+  "message": "string",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "name": "string",
+    "basePrice": 0,
+    "pricePerKm": 0,
+    "description": "string",
+    "isActive": true,
+    "totalDrivers": 0,
+    "totalRides": 0
+  },
+  "timestamp": "2026-05-20T09:08:21.267Z"
+}
+
+delete /api/Admin/vehicle-types/{id}
+Parameters
+Name
+id *
+string($uuid)
+(path)
+Response:
+{
+  "success": true,
+  "message": "string",
+  "data": "string",
+  "timestamp": "2026-05-20T09:09:14.303Z"
+}

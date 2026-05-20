@@ -13,9 +13,16 @@ abstract class AdminRepository {
     bool? isActive,
     bool? isOnline,
   });
-  Future<AdminUserModel> createUser(String accessToken, RegisterRequest request);
+  Future<AdminUserModel> createUser(
+    String accessToken,
+    RegisterRequest request,
+  );
   Future<AdminUserModel> getUserById(String accessToken, String id);
-  Future<AdminUserModel> updateUser(String accessToken, String id, Map<String, dynamic> updateData);
+  Future<AdminUserModel> updateUser(
+    String accessToken,
+    String id,
+    Map<String, dynamic> updateData,
+  );
   Future<void> deleteUser(String accessToken, String id);
   Future<void> toggleUserStatus(String accessToken, String id, bool isActive);
 
@@ -34,8 +41,15 @@ abstract class AdminRepository {
   Future<StatisticsModel> getStatistics(String accessToken);
 
   Future<List<VehicleTypeModel>> getVehicleTypes(String accessToken);
-  Future<VehicleTypeModel> createVehicleType(String accessToken, Map<String, dynamic> data);
+  Future<VehicleTypeModel> createVehicleType(
+    String accessToken,
+    Map<String, dynamic> data,
+  );
   Future<VehicleTypeModel> getVehicleTypeById(String accessToken, String id);
-  Future<VehicleTypeModel> updateVehicleType(String accessToken, String id, Map<String, dynamic> data);
+  Future<VehicleTypeModel> updateVehicleType(
+    String accessToken,
+    String id,
+    Map<String, dynamic> data,
+  );
   Future<void> deleteVehicleType(String accessToken, String id);
 }

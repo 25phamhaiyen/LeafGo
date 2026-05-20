@@ -1,5 +1,3 @@
-
-
 // ── User Management ──────────────────────────────────────────
 
 class AdminUserModel {
@@ -40,7 +38,9 @@ class AdminUserModel {
       isActive: json['isActive'] as bool,
       isOnline: json['isOnline'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      vehicle: json['vehicle'] != null ? VehicleInfo.fromJson(json['vehicle']) : null,
+      vehicle: json['vehicle'] != null
+          ? VehicleInfo.fromJson(json['vehicle'])
+          : null,
       stats: json['stats'] != null ? UserStats.fromJson(json['stats']) : null,
     );
   }
@@ -108,7 +108,10 @@ class PaginatedResponse<T> {
     required this.hasNextPage,
   });
 
-  factory PaginatedResponse.fromJson(Map<String, dynamic> json, T Function(dynamic) fromJsonT) {
+  factory PaginatedResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(dynamic) fromJsonT,
+  ) {
     return PaginatedResponse<T>(
       items: (json['items'] as List).map(fromJsonT).toList(),
       totalItems: json['totalItems'] as int,
@@ -163,9 +166,15 @@ class StatisticsModel {
       totalRevenue: (json['totalRevenue'] as num).toDouble(),
       todayRevenue: (json['todayRevenue'] as num).toDouble(),
       thisMonthRevenue: (json['thisMonthRevenue'] as num).toDouble(),
-      topDrivers: (json['topDrivers'] as List).map((e) => TopDriver.fromJson(e)).toList(),
-      revenueByMonth: (json['revenueByMonth'] as List).map((e) => RevenueByMonth.fromJson(e)).toList(),
-      ridesByStatus: (json['ridesByStatus'] as List).map((e) => RidesByStatus.fromJson(e)).toList(),
+      topDrivers: (json['topDrivers'] as List)
+          .map((e) => TopDriver.fromJson(e))
+          .toList(),
+      revenueByMonth: (json['revenueByMonth'] as List)
+          .map((e) => RevenueByMonth.fromJson(e))
+          .toList(),
+      ridesByStatus: (json['ridesByStatus'] as List)
+          .map((e) => RidesByStatus.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -223,10 +232,7 @@ class RidesByStatus {
   final String status;
   final int count;
 
-  const RidesByStatus({
-    required this.status,
-    required this.count,
-  });
+  const RidesByStatus({required this.status, required this.count});
 
   factory RidesByStatus.fromJson(Map<String, dynamic> json) {
     return RidesByStatus(
@@ -254,6 +260,7 @@ class AdminRideModel {
   final DateTime? cancelledAt;
   final String? cancellationReason;
   final String? cancelledBy;
+  final RideRating? rating;
 
   const AdminRideModel({
     required this.id,
@@ -271,13 +278,16 @@ class AdminRideModel {
     this.cancelledAt,
     this.cancellationReason,
     this.cancelledBy,
+    this.rating,
   });
 
   factory AdminRideModel.fromJson(Map<String, dynamic> json) {
     return AdminRideModel(
       id: json['id'] as String,
       user: RideUser.fromJson(json['user']),
-      driver: json['driver'] != null ? RideDriver.fromJson(json['driver']) : null,
+      driver: json['driver'] != null
+          ? RideDriver.fromJson(json['driver'])
+          : null,
       pickupAddress: json['pickupAddress'] as String,
       destinationAddress: json['destinationAddress'] as String,
       distance: (json['distance'] as num).toDouble(),
@@ -285,11 +295,34 @@ class AdminRideModel {
       finalPrice: (json['finalPrice'] as num).toDouble(),
       status: json['status'] as String,
       requestedAt: DateTime.parse(json['requestedAt'] as String),
-      acceptedAt: json['acceptedAt'] != null ? DateTime.parse(json['acceptedAt'] as String) : null,
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt'] as String) : null,
-      cancelledAt: json['cancelledAt'] != null ? DateTime.parse(json['cancelledAt'] as String) : null,
+      acceptedAt: json['acceptedAt'] != null
+          ? DateTime.parse(json['acceptedAt'] as String)
+          : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
+      cancelledAt: json['cancelledAt'] != null
+          ? DateTime.parse(json['cancelledAt'] as String)
+          : null,
       cancellationReason: json['cancellationReason'] as String?,
       cancelledBy: json['cancelledBy'] as String?,
+      rating: json['rating'] != null
+          ? RideRating.fromJson(json['rating'])
+          : null,
+    );
+  }
+}
+
+class RideRating {
+  final double rating;
+  final String? comment;
+
+  const RideRating({required this.rating, this.comment});
+
+  factory RideRating.fromJson(Map<String, dynamic> json) {
+    return RideRating(
+      rating: (json['rating'] as num).toDouble(),
+      comment: json['comment'] as String?,
     );
   }
 }
