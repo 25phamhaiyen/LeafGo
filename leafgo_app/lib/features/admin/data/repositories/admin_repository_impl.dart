@@ -32,7 +32,10 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<AdminUserModel> createUser(String accessToken, RegisterRequest request) {
+  Future<AdminUserModel> createUser(
+    String accessToken,
+    RegisterRequest request,
+  ) {
     return remote.createUser(accessToken, request);
   }
 
@@ -42,7 +45,11 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<AdminUserModel> updateUser(String accessToken, String id, Map<String, dynamic> updateData) {
+  Future<AdminUserModel> updateUser(
+    String accessToken,
+    String id,
+    Map<String, dynamic> updateData,
+  ) {
     return remote.updateUser(accessToken, id, updateData);
   }
 
@@ -95,7 +102,10 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<VehicleTypeModel> createVehicleType(String accessToken, Map<String, dynamic> data) {
+  Future<VehicleTypeModel> createVehicleType(
+    String accessToken,
+    Map<String, dynamic> data,
+  ) {
     return remote.createVehicleType(accessToken, data);
   }
 
@@ -105,7 +115,11 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<VehicleTypeModel> updateVehicleType(String accessToken, String id, Map<String, dynamic> data) {
+  Future<VehicleTypeModel> updateVehicleType(
+    String accessToken,
+    String id,
+    Map<String, dynamic> data,
+  ) {
     return remote.updateVehicleType(accessToken, id, data);
   }
 
