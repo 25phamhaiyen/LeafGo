@@ -10,7 +10,7 @@ class LocationService {
     'VITE_ORS_API_KEY',
     defaultValue: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjNiNTRkZDAyZjZhODQwNThiNmI5YzZjOThmNmI5ZGQyIiwiaCI6Im11cm11cjY0In0=',
   );
-  static const String _orsApiUrl = String.fromEnvironment('VITE_ORS_API', defaultValue: 'https://api.openrouteservice.org/v2');
+  static const String _orsApiUrl = String.fromEnvironment('VITE_ORS_API', defaultValue: 'https://api.openrouteservice.org');
   static const String _nominatimUrl = String.fromEnvironment('VITE_NOMINATIM_API', defaultValue: 'https://nominatim.openstreetmap.org');
   static const String _osrmUrl = 'https://router.project-osrm.org/route/v1/driving';
 
@@ -19,7 +19,7 @@ class LocationService {
     if (_orsApiKey.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('$_orsApiUrl/geocode/search').replace(queryParameters: {
+          Uri.parse('${_cleanOrsUrl(_orsApiUrl)}/geocode/search').replace(queryParameters: {
             'api_key': _orsApiKey,
             'text': query,
             'boundary.country': 'VN',
@@ -143,7 +143,7 @@ class LocationService {
       lastKnown = await Geolocator.getLastKnownPosition();
     } catch (_) {}
 
-    if (lastKnown != null && lastKnown.latitude != 0.0 && lastKnown.longitude > 0.0) {
+    if (lastKnown != null && lastKnown.latitude != 0.0 && lastKnown.longitude != 0.0) {
       return lastKnown;
     }
 
@@ -154,7 +154,7 @@ class LocationService {
         ),
       ).timeout(const Duration(seconds: 10));
       
-      if (pos.latitude != 0.0 && pos.longitude > 0.0) {
+      if (pos.latitude != 0.0 && pos.longitude != 0.0) {
         return pos;
       }
     } catch (_) {}
@@ -171,7 +171,7 @@ class LocationService {
     if (_orsApiKey.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('$_orsApiUrl/geocode/reverse').replace(queryParameters: {
+          Uri.parse('${_cleanOrsUrl(_orsApiUrl)}/geocode/reverse').replace(queryParameters: {
             'api_key': _orsApiKey,
             'point.lon': lng.toString(),
             'point.lat': lat.toString(),
@@ -230,5 +230,12 @@ class LocationService {
         point.latitude <= 90 &&
         point.longitude >= -180 &&
         point.longitude <= 180;
+  }
+
+  static String _cleanOrsUrl(String url) {
+    if (url.endsWith('/v2')) {
+      return url.substring(0, url.length - 3);
+    }
+    return url;
   }
 }

@@ -42,6 +42,7 @@ import 'features/booking/presentation/bloc/booking_bloc.dart';
 // Core → Services
 import 'core/services/location_service.dart';
 import 'core/services/signalr_service.dart';
+import 'core/constants/api_constants.dart';
 
 final sl = GetIt.instance;
 
@@ -55,11 +56,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -78,11 +75,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<AdminRemoteDataSource>(
     () => AdminRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -121,22 +114,14 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<SignalRService>(
     () => SignalRService(
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
   sl.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -148,11 +133,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<UserRemoteDataSource>(
     () => UserRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -180,11 +161,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<DriverRemoteDataSource>(
     () => DriverRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
