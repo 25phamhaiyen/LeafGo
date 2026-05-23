@@ -16,9 +16,16 @@ abstract class AdminRemoteDataSource {
     bool? isActive,
     bool? isOnline,
   });
-  Future<AdminUserModel> createUser(String accessToken, RegisterRequest request);
+  Future<AdminUserModel> createUser(
+    String accessToken,
+    RegisterRequest request,
+  );
   Future<AdminUserModel> getUserById(String accessToken, String id);
-  Future<AdminUserModel> updateUser(String accessToken, String id, Map<String, dynamic> updateData);
+  Future<AdminUserModel> updateUser(
+    String accessToken,
+    String id,
+    Map<String, dynamic> updateData,
+  );
   Future<void> deleteUser(String accessToken, String id);
   Future<void> toggleUserStatus(String accessToken, String id, bool isActive);
 
@@ -40,9 +47,16 @@ abstract class AdminRemoteDataSource {
 
   // Vehicle Types
   Future<List<VehicleTypeModel>> getVehicleTypes(String accessToken);
-  Future<VehicleTypeModel> createVehicleType(String accessToken, Map<String, dynamic> data);
+  Future<VehicleTypeModel> createVehicleType(
+    String accessToken,
+    Map<String, dynamic> data,
+  );
   Future<VehicleTypeModel> getVehicleTypeById(String accessToken, String id);
-  Future<VehicleTypeModel> updateVehicleType(String accessToken, String id, Map<String, dynamic> data);
+  Future<VehicleTypeModel> updateVehicleType(
+    String accessToken,
+    String id,
+    Map<String, dynamic> data,
+  );
   Future<void> deleteVehicleType(String accessToken, String id);
 }
 
@@ -77,7 +91,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       try {
         err = ApiError.fromJson(json.decode(body) as Map<String, dynamic>);
       } catch (_) {}
-      throw Exception(err?.firstDetail ?? 'Unexpected error (${res.statusCode})');
+      throw Exception(
+        err?.firstDetail ?? 'Unexpected error (${res.statusCode})',
+      );
     }
     return json.decode(body);
   }
@@ -92,15 +108,18 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     bool? isActive,
     bool? isOnline,
   }) async {
-    final query = {
+    final query = <String, String>{
       'page': page.toString(),
       'pageSize': pageSize.toString(),
-      if (role != null) 'role': role,
-      if (search != null) 'search': search,
-      if (isActive != null) 'isActive': isActive.toString(),
-      if (isOnline != null) 'isOnline': isOnline.toString(),
     };
-    final res = await _client.get(_uri('users', query), headers: _headers(accessToken));
+    if (role != null) query['role'] = role;
+    if (search != null) query['search'] = search;
+    if (isActive != null) query['isActive'] = isActive.toString();
+    if (isOnline != null) query['isOnline'] = isOnline.toString();
+    final res = await _client.get(
+      _uri('users', query),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
     return PaginatedResponse.fromJson(
       data['data'] as Map<String, dynamic>,
@@ -109,25 +128,35 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<AdminUserModel> createUser(String accessToken, RegisterRequest request) async {
+  Future<AdminUserModel> createUser(
+    String accessToken,
+    RegisterRequest request,
+  ) async {
     final res = await _client.post(
       _uri('users'),
       headers: _headers(accessToken),
       body: json.encode(request.toJson()),
     );
-    final data = _decode(res, expected: [201]);
-    return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
-  }
-
-  @override
-  Future<AdminUserModel> getUserById(String accessToken, String id) async {
-    final res = await _client.get(_uri('users/$id'), headers: _headers(accessToken));
     final data = _decode(res);
     return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
-  Future<AdminUserModel> updateUser(String accessToken, String id, Map<String, dynamic> updateData) async {
+  Future<AdminUserModel> getUserById(String accessToken, String id) async {
+    final res = await _client.get(
+      _uri('users/$id'),
+      headers: _headers(accessToken),
+    );
+    final data = _decode(res);
+    return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<AdminUserModel> updateUser(
+    String accessToken,
+    String id,
+    Map<String, dynamic> updateData,
+  ) async {
     final res = await _client.put(
       _uri('users/$id'),
       headers: _headers(accessToken),
@@ -139,12 +168,19 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<void> deleteUser(String accessToken, String id) async {
-    final res = await _client.delete(_uri('users/$id'), headers: _headers(accessToken));
+    final res = await _client.delete(
+      _uri('users/$id'),
+      headers: _headers(accessToken),
+    );
     _decode(res);
   }
 
   @override
-  Future<void> toggleUserStatus(String accessToken, String id, bool isActive) async {
+  Future<void> toggleUserStatus(
+    String accessToken,
+    String id,
+    bool isActive,
+  ) async {
     final res = await _client.put(
       _uri('users/$id/toggle-status'),
       headers: _headers(accessToken),
@@ -164,16 +200,19 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String? userId,
     String? driverId,
   }) async {
-    final query = {
+    final query = <String, String>{
       'page': page.toString(),
       'pageSize': pageSize.toString(),
-      if (status != null) 'status': status,
-      if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-      if (toDate != null) 'toDate': toDate.toIso8601String(),
-      if (userId != null) 'userId': userId,
-      if (driverId != null) 'driverId': driverId,
     };
-    final res = await _client.get(_uri('rides', query), headers: _headers(accessToken));
+    if (status != null) query['status'] = status;
+    if (fromDate != null) query['fromDate'] = fromDate.toIso8601String();
+    if (toDate != null) query['toDate'] = toDate.toIso8601String();
+    if (userId != null) query['userId'] = userId;
+    if (driverId != null) query['driverId'] = driverId;
+    final res = await _client.get(
+      _uri('rides', query),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
     return PaginatedResponse.fromJson(
       data['data'] as Map<String, dynamic>,
@@ -183,49 +222,84 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<AdminRideModel> getRideById(String accessToken, String id) async {
-    final res = await _client.get(_uri('rides/$id'), headers: _headers(accessToken));
+    final res = await _client.get(
+      _uri('rides/$id'),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
     return AdminRideModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<StatisticsModel> getStatistics(String accessToken) async {
-    final res = await _client.get(_uri('statistics'), headers: _headers(accessToken));
+    final res = await _client.get(
+      _uri('statistics'),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
     return StatisticsModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<List<VehicleTypeModel>> getVehicleTypes(String accessToken) async {
-    final res = await _client.get(_uri('vehicle-types'), headers: _headers(accessToken));
+    final res = await _client.get(
+      _uri('vehicle-types'),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
-    return (data['data'] as List).map((e) => VehicleTypeModel.fromJson(e)).toList();
+    return (data['data'] as List)
+        .map((e) => VehicleTypeModel.fromJson(e))
+        .toList();
   }
 
   @override
-  Future<VehicleTypeModel> createVehicleType(String accessToken, Map<String, dynamic> data) async {
-    final res = await _client.post(_uri('vehicle-types'), headers: _headers(accessToken), body: json.encode(data));
-    final dataRes = _decode(res, expected: [201]);
+  Future<VehicleTypeModel> createVehicleType(
+    String accessToken,
+    Map<String, dynamic> data,
+  ) async {
+    final res = await _client.post(
+      _uri('vehicle-types'),
+      headers: _headers(accessToken),
+      body: json.encode(data),
+    );
+    final dataRes = _decode(res);
     return VehicleTypeModel.fromJson(dataRes['data']);
   }
 
   @override
-  Future<VehicleTypeModel> getVehicleTypeById(String accessToken, String id) async {
-    final res = await _client.get(_uri('vehicle-types/$id'), headers: _headers(accessToken));
+  Future<VehicleTypeModel> getVehicleTypeById(
+    String accessToken,
+    String id,
+  ) async {
+    final res = await _client.get(
+      _uri('vehicle-types/$id'),
+      headers: _headers(accessToken),
+    );
     final data = _decode(res);
     return VehicleTypeModel.fromJson(data['data']);
   }
 
   @override
-  Future<VehicleTypeModel> updateVehicleType(String accessToken, String id, Map<String, dynamic> data) async {
-    final res = await _client.put(_uri('vehicle-types/$id'), headers: _headers(accessToken), body: json.encode(data));
+  Future<VehicleTypeModel> updateVehicleType(
+    String accessToken,
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final res = await _client.put(
+      _uri('vehicle-types/$id'),
+      headers: _headers(accessToken),
+      body: json.encode(data),
+    );
     final dataRes = _decode(res);
     return VehicleTypeModel.fromJson(dataRes['data']);
   }
 
   @override
   Future<void> deleteVehicleType(String accessToken, String id) async {
-    final res = await _client.delete(_uri('vehicle-types/$id'), headers: _headers(accessToken));
+    final res = await _client.delete(
+      _uri('vehicle-types/$id'),
+      headers: _headers(accessToken),
+    );
     _decode(res);
   }
 }

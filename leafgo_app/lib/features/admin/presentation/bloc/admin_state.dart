@@ -8,6 +8,11 @@ class AdminInitial extends AdminState {}
 
 class AdminLoading extends AdminState {}
 
+class AdminActionSuccess extends AdminState {
+  final String message;
+  AdminActionSuccess(this.message);
+}
+
 class AdminDashboardLoaded extends AdminState {
   final StatisticsModel stats;
   AdminDashboardLoaded(this.stats);
