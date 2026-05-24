@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:leafgo_app/core/utils/avatar_utils.dart';
 
 import '../../injection_container.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -439,11 +440,20 @@ class _UserList extends StatelessWidget {
           }
           final user = users.items[index];
           return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: user.avatar != null
-                  ? NetworkImage(user.avatar!)
+            leading: GestureDetector(
+              onTap: user.avatar != null
+                  ? () => _showAvatarPreview(
+                      context,
+                      normalizeAvatarUrl(user.avatar!)!,
+                    )
                   : null,
-              child: user.avatar == null ? Text(_initial(user.fullName)) : null,
+              child: buildAvatarCircle(
+                user.avatar,
+                radius: 20,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                placeholderIcon: Icons.person,
+                placeholderIconColor: Theme.of(context).colorScheme.primary,
+              ),
             ),
             title: Text(user.fullName),
             subtitle: Text(
@@ -470,6 +480,44 @@ class _UserList extends StatelessWidget {
             onTap: () => _showDetails(context, user),
           );
         },
+      ),
+    );
+  }
+
+  void _showAvatarPreview(BuildContext context, String avatarUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: InteractiveViewer(
+                child: Image.network(
+                  normalizeAvatarUrl(avatarUrl) ?? '',
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const SizedBox(
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => const SizedBox(
+                    height: 200,
+                    child: Center(child: Text('Không thể tải ảnh')),
+                  ),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -570,11 +618,6 @@ class _Pagination extends StatelessWidget {
 String? _required(String? value) {
   if (value == null || value.trim().isEmpty) return 'Bắt buộc';
   return null;
-}
-
-String _initial(String value) {
-  final trimmed = value.trim();
-  return trimmed.isEmpty ? '?' : trimmed[0].toUpperCase();
 }
 
 String _money(double value) {

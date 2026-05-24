@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:leafgo_app/core/utils/avatar_utils.dart';
 
 import '../../injection_container.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -152,13 +153,22 @@ class AdminDashboardScreen extends StatelessWidget {
                       ...stats.topDrivers.map(
                         (driver) => ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundImage: driver.avatar != null
-                                ? NetworkImage(driver.avatar!)
-                                : null,
-                            child: driver.avatar == null
-                                ? Text(_initial(driver.fullName))
-                                : null,
+                          onTap: driver.avatar != null
+                              ? () => _showAvatarPreview(
+                                  context,
+                                  normalizeAvatarUrl(driver.avatar!)!,
+                                )
+                              : null,
+                          leading: buildAvatarCircle(
+                            driver.avatar,
+                            radius: 20,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
+                            placeholderIcon: Icons.person,
+                            placeholderIconColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                           ),
                           title: Text(driver.fullName),
                           subtitle: Text(
@@ -286,9 +296,43 @@ class _MenuTile extends StatelessWidget {
   }
 }
 
-String _initial(String value) {
-  final trimmed = value.trim();
-  return trimmed.isEmpty ? '?' : trimmed[0].toUpperCase();
+void _showAvatarPreview(BuildContext context, String avatarUrl) {
+  final normalizedUrl = normalizeAvatarUrl(avatarUrl);
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: InteractiveViewer(
+              child: Image.network(
+                normalizedUrl ?? '',
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => const SizedBox(
+                  height: 200,
+                  child: Center(child: Text('Không thể tải ảnh')),
+                ),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 String _money(double value) {

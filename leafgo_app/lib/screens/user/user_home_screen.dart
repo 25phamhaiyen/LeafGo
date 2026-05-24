@@ -155,8 +155,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
             ),
 
-            // 4. Floating Suggestion List above bottom sheet to prevent layout shifting
-            _buildFloatingSuggestions(),
+
           ],
         ),
       ),
@@ -247,6 +246,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             iconColor: Colors.green,
             isPickup: true,
           ),
+          if (state.searchResults.isNotEmpty && _isPickupActive)
+            _buildInlineSuggestions(state),
           
           // 3. Swap Locations Button
           const SizedBox(height: 6),
@@ -286,6 +287,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             iconColor: Colors.red,
             isPickup: false,
           ),
+          if (state.searchResults.isNotEmpty && !_isPickupActive)
+            _buildInlineSuggestions(state),
           const SizedBox(height: 12),
 
           // 5. Confirmation and Cancel actions
@@ -553,48 +556,39 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  Widget _buildFloatingSuggestions() {
-    return BlocBuilder<BookingBloc, BookingState>(
-      builder: (context, state) {
-        if (state.searchResults.isEmpty) return const SizedBox.shrink();
-        
-        // Float suggestion above the bottom sheet beautifully
-        return Positioned(
-          bottom: 300, 
-          left: 16,
-          right: 16,
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 3))],
+  Widget _buildInlineSuggestions(BookingState state) {
+    return Container(
+      margin: const EdgeInsets.only(top: 6, bottom: 6),
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        itemCount: state.searchResults.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final loc = state.searchResults[index];
+          return ListTile(
+            dense: true,
+            leading: const Icon(Icons.place_outlined, color: Color(0xFF10B981), size: 16),
+            title: Text(
+              loc.fullAddress, 
+              maxLines: 1, 
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
             ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: state.searchResults.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final loc = state.searchResults[index];
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.place_outlined, color: Colors.grey, size: 16),
-                  title: Text(
-                    loc.fullAddress, 
-                    maxLines: 1, 
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  onTap: () {
-                    context.read<BookingBloc>().add(BookingSelectLocation(loc, _isPickupActive));
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              context.read<BookingBloc>().add(BookingSelectLocation(loc, _isPickupActive));
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -669,9 +663,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       child: TextField(
         controller: controller,
         style: const TextStyle(fontSize: 13),
-        onTap: () => _isPickupActive = isPickup,
+        onTap: () {
+          setState(() {
+            _isPickupActive = isPickup;
+          });
+        },
         onChanged: (val) {
-          _isPickupActive = isPickup;
+          setState(() {
+            _isPickupActive = isPickup;
+          });
           context.read<BookingBloc>().add(BookingSearchLocation(val, isPickup));
         },
         decoration: InputDecoration(

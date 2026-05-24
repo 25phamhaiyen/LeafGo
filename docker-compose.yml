@@ -1,5 +1,4 @@
 services:
-
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: leafgo_sqlserver
@@ -15,9 +14,20 @@ services:
     networks:
       - leafgo_network
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd",
-             "-S", "localhost", "-U", "sa", "-P", "${DB_PASSWORD}",
-             "-Q", "SELECT 1", "-C"]
+      test:
+        [
+          "CMD",
+          "/opt/mssql-tools18/bin/sqlcmd",
+          "-S",
+          "localhost",
+          "-U",
+          "sa",
+          "-P",
+          "${DB_PASSWORD}",
+          "-Q",
+          "SELECT 1",
+          "-C",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -40,7 +50,7 @@ services:
       ConnectionStrings__Redis: redis:6379
       EnableSwagger: "true"
     volumes:
-      - avatars_data:/app/wwwroot/avatars
+      - avatars_data:/app/wwwroot/uploads
       - dataprotection_keys:/home/appuser/.aspnet/DataProtection-Keys
     depends_on:
       sqlserver:
@@ -74,6 +84,8 @@ services:
     container_name: leafgo_nginx
     ports:
       - "8000:80"
+    volumes:
+      - avatars_data:/app/wwwroot/uploads
     depends_on:
       - api
       - flutter
