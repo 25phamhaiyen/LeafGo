@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:leafgo_app/features/booking/data/models/booking_models.dart';
+import 'package:leafgo_app/models/booking_models.dart';
 
 class LocationService {
   // Env variables resolved at compile time via --dart-define-from-file
