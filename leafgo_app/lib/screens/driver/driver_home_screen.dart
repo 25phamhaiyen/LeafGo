@@ -66,7 +66,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       },
       builder: (context, state) {
         final routePoints = _routePoints.where(_isValidLatLng).toList();
-        LatLng centerCoords = const LatLng(10.8458, 106.7945); // Default UTC
+        LatLng centerCoords = state.currentLocation ?? const LatLng(10.8458, 106.7945);
         if (state.currentRide != null) {
           final pickupPoint = LatLng(state.currentRide!.pickupLatitude, state.currentRide!.pickupLongitude);
           if (_isValidLatLng(pickupPoint)) {
@@ -435,18 +435,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Widget _buildActiveRidePanel(RideModel ride, Color primaryColor, bool isLoading) {
-    String actionText = 'Bat dau di don';
+    String actionText = 'Bắt đầu đi đón';
     String nextStatus = 'DriverArriving';
-    String descText = 'Hay bat dau di chuyen den vi tri don hanh khach.';
+    String descText = 'Hãy bắt đầu di chuyển đến vị trí đón hành khách.';
 
     if (ride.status == 'Accepted') {
-      actionText = 'Bat dau di don';
+      actionText = 'Bắt đầu đi đón';
       nextStatus = 'DriverArriving';
-      descText = 'Hay bat dau di chuyen den vi tri don hanh khach.';
+      descText = 'Hãy bắt đầu di chuyển đến vị trí đón hành khách.';
     } else if (ride.status == 'DriverArriving') {
-      actionText = 'Toi da den diem don';
+      actionText = 'Tôi đã đến điểm đón';
       nextStatus = 'DriverArrived';
-      descText = 'Xac nhan khi ban da den dung diem don.';
+      descText = 'Xác nhận khi bạn đã đến đúng điểm đón.';
     } else if (ride.status == 'DriverArrived') {
       actionText = 'Bắt đầu hành trình';
       nextStatus = 'InProgress';
@@ -558,7 +558,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       case 'Accepted':
         return 'Đang đi đón khách';
       case 'DriverArriving':
-        return 'Dang di don khach';
+        return 'Đang đi đón khách';
       case 'DriverArrived':
         return 'Đã tới điểm đón';
       case 'InProgress':

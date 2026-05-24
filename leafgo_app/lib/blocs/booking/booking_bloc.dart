@@ -262,11 +262,19 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   Future<void> _onGetCurrentLocation(BookingGetCurrentLocation event, Emitter<BookingState> emit) async {
+    // 5. Fix race condition: Tăng version ngay lập tức khi bắt đầu fetch để chặn các kết quả cũ hoặc chồng chéo
+    if (event.isPickup) {
+      _pickupLocationVersion++;
+    } else {
+      _dropoffLocationVersion++;
+    }
     final locationVersionAtStart = event.isPickup ? _pickupLocationVersion : _dropoffLocationVersion;
     emit(state.copyWith(isLoading: true));
     try {
+      // 1. Dùng getCurrentPosition() theo đúng locationService hiện tại
       final pos = await locationService.getCurrentPosition();
       final loc = await locationService.reverseGeocode(pos.latitude, pos.longitude);
+      
       if (loc != null) {
         final locationVersionNow = event.isPickup ? _pickupLocationVersion : _dropoffLocationVersion;
         if (locationVersionNow != locationVersionAtStart) return;
@@ -328,9 +336,20 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   }
 
   Future<void> _onRequestRide(BookingRequestRide event, Emitter<BookingState> emit) async {
-    if (state.priceData == null) return;
+    // 4. Fix null safety: Kiểm tra toàn bộ state liên quan trước khi request
+    if (state.pickupLocation == null ||
+        state.dropoffLocation == null ||
+        state.selectedVehicleTypeId == null ||
+        state.priceData == null) {
+      return;
+    }
+    
     emit(state.copyWith(isLoading: true));
-    if (_token == null) return;
+    if (_token == null) {
+      emit(state.copyWith(isLoading: false, error: 'Chưa đăng nhập.'));
+      return;
+    }
+    
     try {
       final rideData = {
         'vehicleTypeId': state.selectedVehicleTypeId,
@@ -348,7 +367,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(state.copyWith(currentRide: ride));
       await signalRService.joinRideGroup(ride.id);
     } catch (e) {
-      emit(state.copyWith(error: e.toString()));
+      emit(state.copyWith(error: e.toString(), isLoading: false));
     } finally {
       emit(state.copyWith(isLoading: false));
     }

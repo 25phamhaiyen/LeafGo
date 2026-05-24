@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/models/booking_models.dart';
 import 'package:leafgo_app/services/datasources/auth_local_datasource.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
@@ -48,6 +49,7 @@ class DriverState {
   final List<dynamic> pendingRides;
   final DriverStatsModel? stats;
   final DriverVehicleModel? vehicle;
+  final LatLng? currentLocation;
   final bool isLoading;
   final String? error;
 
@@ -57,6 +59,7 @@ class DriverState {
     this.pendingRides = const [],
     this.stats,
     this.vehicle,
+    this.currentLocation,
     this.isLoading = false,
     this.error,
   });
@@ -67,6 +70,7 @@ class DriverState {
     List<dynamic>? pendingRides,
     DriverStatsModel? stats,
     DriverVehicleModel? vehicle,
+    LatLng? currentLocation,
     bool? isLoading,
     String? error,
     bool clearCurrentRide = false,
@@ -77,6 +81,7 @@ class DriverState {
       pendingRides: pendingRides ?? this.pendingRides,
       stats: stats ?? this.stats,
       vehicle: vehicle ?? this.vehicle,
+      currentLocation: currentLocation ?? this.currentLocation,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -206,10 +211,13 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     try {
       final token = await _getToken();
       if (token == null) return;
+      
       final pos = await locationService.getCurrentPosition();
       final rides = await repository.getPendingRides(pos.latitude, pos.longitude, 5, token);
       emit(state.copyWith(pendingRides: rides));
-    } catch (_) {}
+    } catch (e) {
+      // If GPS fails, do not poll to prevent fetching rides with invalid coordinates.
+    }
   }
 
   Future<void> _onUpdateLocation(DriverUpdateLocation event, Emitter<DriverState> emit) async {
@@ -217,6 +225,7 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
       final token = await _getToken();
       if (token == null) return;
       final pos = await locationService.getCurrentPosition();
+      emit(state.copyWith(currentLocation: LatLng(pos.latitude, pos.longitude)));
       await repository.updateLocation(pos.latitude, pos.longitude, token);
     } catch (_) {}
   }

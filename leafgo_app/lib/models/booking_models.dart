@@ -14,6 +14,8 @@ class LocationModel {
   LatLng get toLatLng => LatLng(lat, lng);
 
   bool get hasValidCoordinates {
+    // Reject (0,0) — the default "no data" value returned when GPS fails.
+    if (lat == 0.0 && lng == 0.0) return false;
     return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   }
 
