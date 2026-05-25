@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'injection_container.dart';
-import 'features/auth/presentation/bloc/auth_bloc.dart';
-import 'features/auth/presentation/pages/login_screen.dart';
-import 'features/auth/presentation/pages/register_screen.dart';
-import 'features/auth/presentation/pages/forgot_password_screen.dart';
-import 'features/user/presentation/pages/main_screen.dart';
-import 'features/admin/presentation/pages/admin_dashboard_screen.dart';
+import 'blocs/auth/auth_bloc.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+import 'screens/user/main_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
