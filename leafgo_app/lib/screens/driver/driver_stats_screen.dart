@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/driver/driver_bloc.dart';
+import 'driver_reviews_screen.dart';
 
 class DriverStatsScreen extends StatefulWidget {
   const DriverStatsScreen({super.key});
@@ -97,8 +98,26 @@ class _DriverStatsScreenState extends State<DriverStatsScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _headerMiniStat('Chuyến đi', stats.totalRides.toString()),
-                            _headerMiniStat('Đánh giá', '${stats.averageRating.toStringAsFixed(1)} ★'),
-                            _headerMiniStat('Đánh giá từ khách', stats.totalReviews.toString()),
+                            _headerMiniStat(
+                              'Đánh giá',
+                              '${stats.averageRating.toStringAsFixed(1)} ★',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const DriverReviewsScreen()),
+                                );
+                              },
+                            ),
+                            _headerMiniStat(
+                              'Đánh giá từ khách',
+                              stats.totalReviews.toString(),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const DriverReviewsScreen()),
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ],
@@ -188,14 +207,29 @@ class _DriverStatsScreenState extends State<DriverStatsScreen> {
     );
   }
 
-  Widget _headerMiniStat(String label, String value) {
-    return Column(
+  Widget _headerMiniStat(String label, String value, {VoidCallback? onTap}) {
+    final child = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10)),
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: child,
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: child,
     );
   }
 
