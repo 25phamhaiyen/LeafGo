@@ -8,40 +8,41 @@
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
-import 'package:leafgo_app/features/admin/data/datasources/admin_remote_datasource.dart';
-import 'package:leafgo_app/features/admin/data/repositories/admin_repository_impl.dart';
-import 'package:leafgo_app/features/admin/domain/repositories/admin_repository.dart';
-import 'package:leafgo_app/features/auth/domain/usecases/auth_usecases.dart';
+import 'package:leafgo_app/services/datasources/admin_remote_datasource.dart';
+import 'package:leafgo_app/services/repositories/admin_repository_impl.dart';
+import 'package:leafgo_app/services/repositories/admin_repository.dart';
+import 'package:leafgo_app/services/usecases/auth_usecases.dart';
+import 'package:leafgo_app/services/datasources/booking_remote_datasource.dart';
+import 'package:leafgo_app/services/repositories/booking_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Features → Auth
-import 'features/auth/data/datasources/auth_remote_datasource.dart';
-import 'features/auth/data/datasources/auth_local_datasource.dart';
-import 'features/auth/domain/repositories/auth_repository.dart';
+import 'services/datasources/auth_remote_datasource.dart';
+import 'services/datasources/auth_local_datasource.dart';
+import 'services/repositories/auth_repository.dart';
 
-import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'blocs/auth/auth_bloc.dart';
 
-import 'features/admin/presentation/bloc/admin_bloc.dart';
-import 'features/auth/presentation/bloc/user_bloc.dart';
+import 'blocs/admin/admin_bloc.dart';
+import 'blocs/user/user_bloc.dart';
 
 // Features → Booking
-import 'features/booking/data/datasources/booking_remote_datasource.dart';
-import 'features/booking/domain/repositories/booking_repository.dart';
 
 // Features → User Profile & History
-import 'features/auth/data/datasources/user_remote_datasource.dart';
-import 'features/auth/domain/repositories/user_repository.dart';
+import 'services/datasources/user_remote_datasource.dart';
+import 'services/repositories/user_repository.dart';
 
 // Features → Driver
-import 'features/driver/data/datasources/driver_remote_datasource.dart';
-import 'features/driver/domain/repositories/driver_repository.dart';
-import 'features/driver/presentation/bloc/driver_bloc.dart';
+import 'services/datasources/driver_remote_datasource.dart';
+import 'services/repositories/driver_repository.dart';
+import 'blocs/driver/driver_bloc.dart';
 
-import 'features/booking/presentation/bloc/booking_bloc.dart';
+import 'blocs/booking/booking_bloc.dart';
 
 // Core → Services
 import 'core/services/location_service.dart';
 import 'core/services/signalr_service.dart';
+import 'core/constants/api_constants.dart';
 
 final sl = GetIt.instance;
 
@@ -55,11 +56,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -78,11 +75,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<AdminRemoteDataSource>(
     () => AdminRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -121,22 +114,14 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<SignalRService>(
     () => SignalRService(
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
   sl.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -148,11 +133,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<UserRemoteDataSource>(
     () => UserRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
@@ -180,11 +161,7 @@ Future<void> setupDI() async {
   sl.registerLazySingleton<DriverRemoteDataSource>(
     () => DriverRemoteDataSourceImpl(
       client: sl<http.Client>(),
-      baseUrl: kIsWeb
-          ? 'http://127.0.0.1:8000'
-          : (defaultTargetPlatform == TargetPlatform.android
-              ? 'http://10.0.2.2:8000'
-              : 'http://127.0.0.1:8000'),
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 

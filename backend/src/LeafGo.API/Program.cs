@@ -250,7 +250,7 @@ namespace LeafGo.API
 
             // app.UseHttpsRedirection();
             // Serve static files for uploaded avatars
-            var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 
             // Tự tạo thư mục nếu chưa có (Docker container lần đầu chạy sẽ không có)
             if (!Directory.Exists(wwwrootPath))
