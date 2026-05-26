@@ -5,7 +5,7 @@ import 'blocs/auth/auth_bloc.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
-import 'screens/user/main_screen.dart';
+import 'screens/main_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 
 void main() async {
