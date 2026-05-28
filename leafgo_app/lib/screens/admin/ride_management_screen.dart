@@ -2,10 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:leafgo_app/models/admin/ride/admin_ride.dart';
+import 'package:leafgo_app/models/admin/userManagement/paginated_response_model.dart';
 
 import '../../injection_container.dart';
 import '../../blocs/auth/auth_bloc.dart';
-import '../../models/admin_models.dart';
 import '../../blocs/admin/admin_bloc.dart';
 import '../../blocs/admin/admin_event.dart';
 import '../../blocs/admin/admin_state.dart';

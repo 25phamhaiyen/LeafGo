@@ -1,5 +1,5 @@
 import 'package:leafgo_app/models/admin/userManagement/user_stats_model.dart';
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/admin/userManagement/vehicle_info_model.dart';
 
 class AdminUserModel {
   final String id;

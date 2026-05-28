@@ -1,9 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import '../../services/repositories/user_repository.dart';
-import '../../models/auth_models.dart';
 import '../../services/datasources/auth_local_datasource.dart';
 import 'package:image_picker/image_picker.dart';
-
 
 // ── Events ──────────────────────────────────────────────────
 abstract class UserEvent {}

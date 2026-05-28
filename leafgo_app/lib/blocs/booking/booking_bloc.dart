@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/booking/location_model.dart';
+import 'package:leafgo_app/models/booking/ride_model.dart';
+import 'package:leafgo_app/models/booking/vehicle_type.dart';
 import 'package:leafgo_app/services/repositories/booking_repository.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/signalr_service.dart';
@@ -577,7 +579,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         event.comment,
         _token!,
       );
-      
+
       // Successfully rated, now reset the booking state!
       emit(
         BookingState(

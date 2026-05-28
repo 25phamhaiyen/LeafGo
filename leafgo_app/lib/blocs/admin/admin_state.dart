@@ -1,6 +1,10 @@
 // lib/features/admin/presentation/bloc/admin_state.dart
 
-import '../../models/admin_models.dart';
+import 'package:leafgo_app/models/admin/ride/admin_ride.dart';
+import 'package:leafgo_app/models/admin/statistics/statistics_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/admin_user_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/paginated_response_model.dart';
+import 'package:leafgo_app/models/admin/vehicle/vehicle_type.dart';
 
 abstract class AdminState {}
 

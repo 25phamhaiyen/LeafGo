@@ -1,7 +1,9 @@
-
-
-import 'package:leafgo_app/models/admin_models.dart';
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/admin/ride/admin_ride.dart';
+import 'package:leafgo_app/models/admin/statistics/statistics_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/admin_user_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/paginated_response_model.dart';
+import 'package:leafgo_app/models/admin/vehicle/vehicle_type.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/services/datasources/admin_remote_datasource.dart';
 import 'package:leafgo_app/services/repositories/admin_repository.dart';
 

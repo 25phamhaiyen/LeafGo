@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:leafgo_app/models/driver/driver_daily_detail.dart';
+import 'package:leafgo_app/models/driver/driver_stats_model.dart';
 import '../../blocs/driver/driver_bloc.dart';
-import '../../models/driver_models.dart';
 import 'driver_reviews_screen.dart';
 
 class DriverStatsScreen extends StatefulWidget {

@@ -8,7 +8,17 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/request/change_password_request.dart';
+import 'package:leafgo_app/models/auth/request/forgot_password_request.dart';
+import 'package:leafgo_app/models/auth/request/login_request.dart';
+import 'package:leafgo_app/models/auth/request/refresh_token_request.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
+import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
+import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
+import 'package:leafgo_app/models/auth/response/api_error.dart';
+import 'package:leafgo_app/models/auth/token/token_info_models.dart';
+import 'package:leafgo_app/models/auth/token/token_model.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 
 // ── Custom exception ──────────────────────────────────────────
 class AuthException implements Exception {

@@ -47,20 +47,23 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTypeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn loại phương tiện'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Vui lòng chọn loại phương tiện'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     context.read<DriverBloc>().add(
-          DriverUpdateVehicle(
-            vehicleTypeId: _selectedTypeId!,
-            licensePlate: _plateCtrl.text.trim(),
-            vehicleBrand: _brandCtrl.text.trim(),
-            vehicleModel: _modelCtrl.text.trim(),
-            vehicleColor: _colorCtrl.text.trim(),
-          ),
-        );
+      DriverUpdateVehicle(
+        vehicleTypeId: _selectedTypeId!,
+        licensePlate: _plateCtrl.text.trim(),
+        vehicleBrand: _brandCtrl.text.trim(),
+        vehicleModel: _modelCtrl.text.trim(),
+        vehicleColor: _colorCtrl.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -70,7 +73,14 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Thông Tin Phương Tiện', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+        title: const Text(
+          'Thông Tin Phương Tiện',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: primaryColor,
         elevation: 0,
@@ -79,7 +89,10 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
         listener: (context, state) {
           if (state.error != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error!), backgroundColor: Colors.red.shade700),
+              SnackBar(
+                content: Text(state.error!),
+                backgroundColor: Colors.red.shade700,
+              ),
             );
           }
           if (state.vehicle != null && _plateCtrl.text.isEmpty) {
@@ -88,7 +101,9 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
         },
         builder: (context, state) {
           if (state.isLoading && state.vehicle == null) {
-            return const Center(child: CircularProgressIndicator(color: primaryColor));
+            return const Center(
+              child: CircularProgressIndicator(color: primaryColor),
+            );
           }
 
           final bookingState = context.watch<BookingBloc>().state;
@@ -116,33 +131,56 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.directions_car, size: 64, color: primaryColor),
+                        Icon(
+                          Icons.directions_car,
+                          size: 64,
+                          color: primaryColor,
+                        ),
                         const SizedBox(height: 12),
                         Text(
-                          hasVehicle ? 'Phương tiện đã đăng ký' : 'Chưa đăng ký phương tiện',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                          hasVehicle
+                              ? 'Phương tiện đã đăng ký'
+                              : 'Chưa đăng ký phương tiện',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          hasVehicle 
-                              ? 'Bạn có thể chỉnh sửa thông tin phương tiện bên dưới' 
+                          hasVehicle
+                              ? 'Bạn có thể chỉnh sửa thông tin phương tiện bên dưới'
                               : 'Vui lòng cung cấp thông tin phương tiện để bắt đầu đón khách',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  const Text('Loại phương tiện', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+                  const Text(
+                    'Loại phương tiện',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.black54,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: _selectedTypeId,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.grey.shade50,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -165,32 +203,52 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
                   _buildLabel('Biển số xe'),
                   TextFormField(
                     controller: _plateCtrl,
-                    decoration: _inputDec('Ví dụ: 59A-123.45', Icons.badge_outlined),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập biển số' : null,
+                    decoration: _inputDec(
+                      'Ví dụ: 59A-123.45',
+                      Icons.badge_outlined,
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Bắt buộc nhập biển số'
+                        : null,
                   ),
                   const SizedBox(height: 20),
 
                   _buildLabel('Hãng xe'),
                   TextFormField(
                     controller: _brandCtrl,
-                    decoration: _inputDec('Ví dụ: Honda, Yamaha, Toyota', Icons.branding_watermark_outlined),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập hãng xe' : null,
+                    decoration: _inputDec(
+                      'Ví dụ: Honda, Yamaha, Toyota',
+                      Icons.branding_watermark_outlined,
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Bắt buộc nhập hãng xe'
+                        : null,
                   ),
                   const SizedBox(height: 20),
 
                   _buildLabel('Dòng xe'),
                   TextFormField(
                     controller: _modelCtrl,
-                    decoration: _inputDec('Ví dụ: Vision, Wave, Vios', Icons.model_training_outlined),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập dòng xe' : null,
+                    decoration: _inputDec(
+                      'Ví dụ: Vision, Wave, Vios',
+                      Icons.model_training_outlined,
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Bắt buộc nhập dòng xe'
+                        : null,
                   ),
                   const SizedBox(height: 20),
 
                   _buildLabel('Màu xe'),
                   TextFormField(
                     controller: _colorCtrl,
-                    decoration: _inputDec('Ví dụ: Đen, Trắng, Đỏ', Icons.color_lens_outlined),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập màu xe' : null,
+                    decoration: _inputDec(
+                      'Ví dụ: Đen, Trắng, Đỏ',
+                      Icons.color_lens_outlined,
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Bắt buộc nhập màu xe'
+                        : null,
                   ),
                   const SizedBox(height: 36),
 
@@ -200,14 +258,21 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                     child: state.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                            hasVehicle ? 'Cập nhật thông tin' : 'Đăng ký phương tiện',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            hasVehicle
+                                ? 'Cập nhật thông tin'
+                                : 'Đăng ký phương tiện',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
                           ),
                   ),
                 ],
@@ -222,7 +287,14 @@ class _DriverVehicleScreenState extends State<DriverVehicleScreen> {
   Widget _buildLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          color: Colors.black54,
+        ),
+      ),
     );
   }
 

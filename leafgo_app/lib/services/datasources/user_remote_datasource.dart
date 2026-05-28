@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:image_picker/image_picker.dart';
 
 abstract class UserRemoteDataSource {
