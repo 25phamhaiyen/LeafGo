@@ -190,7 +190,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   Future<void> _initialize() async {
     final user = await authLocalDataSource.getCachedUser();
     _token = user?.accessToken;
-    if (_token != null) {
+    if (_token != null && user?.role != 'Driver') {
       await signalRService.startConnection(_token);
       _setupSignalR();
       add(BookingCheckActiveRide());
@@ -477,6 +477,9 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     Emitter<BookingState> emit,
   ) async {
     if (_token == null) return;
+
+    final user = await authLocalDataSource.getCachedUser();
+    if (user?.role == 'Driver') return;
 
     try {
       final ride = await repository.getActiveRide(_token!);
