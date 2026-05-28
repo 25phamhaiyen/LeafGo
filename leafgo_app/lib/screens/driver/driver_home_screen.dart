@@ -5,7 +5,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/booking/location_model.dart';
+import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
@@ -685,7 +686,10 @@ class _IdlePanel extends StatelessWidget {
             children: [
               _StatChip(label: 'Hôm nay', value: '$todayRides chuyến'),
               const SizedBox(width: 8),
-              _StatChip(label: 'Đánh giá', value: '${averageRating.toStringAsFixed(1)} ★'),
+              _StatChip(
+                label: 'Đánh giá',
+                value: '${averageRating.toStringAsFixed(1)} ★',
+              ),
               const SizedBox(width: 8),
               _StatChip(label: 'Doanh thu', value: formattedEarnings),
             ],
@@ -1277,7 +1281,7 @@ class _ActiveRidePanel extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => ChatScreen(
                           rideId: ride.id,
-                          currentUserId: ride.driver?.id ?? 'driver', 
+                          currentUserId: ride.driver?.id ?? 'driver',
                           recipientName: ride.user?.fullName ?? 'Khách hàng',
                         ),
                       ),

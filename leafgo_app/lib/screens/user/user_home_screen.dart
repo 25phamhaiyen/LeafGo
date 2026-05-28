@@ -4,7 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -745,8 +745,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             MaterialPageRoute(
                               builder: (context) => ChatScreen(
                                 rideId: ride.id,
-                                currentUserId: ride.user?.id ?? 'user', // need better userId, maybe from state
-                                recipientName: ride.driver?.fullName ?? 'Tài xế',
+                                currentUserId:
+                                    ride.user?.id ??
+                                    'user', // need better userId, maybe from state
+                                recipientName:
+                                    ride.driver?.fullName ?? 'Tài xế',
                               ),
                             ),
                           );
@@ -1103,10 +1106,7 @@ class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
                 ? 'Hãy đánh giá dịch vụ của tài xế ${widget.ride.driver!.fullName}'
                 : 'Hãy để lại đánh giá của bạn về chuyến đi nhé!',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 20),
 
@@ -1126,7 +1126,9 @@ class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Icon(
-                    isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
+                    isSelected
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
                     color: isSelected ? Colors.amber : Colors.grey.shade300,
                     size: 42,
                   ),
@@ -1180,7 +1182,10 @@ class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Bỏ qua', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: const Text(
+                    'Bỏ qua',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1188,8 +1193,8 @@ class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
                 child: ElevatedButton(
                   onPressed: () {
                     context.read<BookingBloc>().add(
-                          BookingSubmitRating(_rating, _commentController.text),
-                        );
+                      BookingSubmitRating(_rating, _commentController.text),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
@@ -1200,7 +1205,10 @@ class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: const Text(
+                    'Gửi đánh giá',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                 ),
               ),
             ],

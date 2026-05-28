@@ -1,31 +1,39 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/booking/ride_model.dart';
+import 'package:leafgo_app/models/driver/driver_stats_model.dart';
+import 'package:leafgo_app/models/driver/driver_vehicle_model.dart';
 import 'package:leafgo_app/services/datasources/auth_local_datasource.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
 import 'package:leafgo_app/core/services/signalr_service.dart';
 import '../../services/repositories/driver_repository.dart';
-import '../../models/driver_models.dart';
 
 // ── Events ──────────────────────────────────────────────────
 abstract class DriverEvent {}
 
 class DriverCheckActiveRide extends DriverEvent {}
+
 class DriverLoadProfile extends DriverEvent {}
+
 class DriverToggleOnline extends DriverEvent {}
+
 class DriverPollPendingRides extends DriverEvent {}
+
 class DriverUpdateLocation extends DriverEvent {}
+
 class DriverAcceptRide extends DriverEvent {
   final String rideId;
   final String version;
   DriverAcceptRide(this.rideId, this.version);
 }
+
 class DriverUpdateRideStatus extends DriverEvent {
   final String status;
   final double? finalPrice;
   DriverUpdateRideStatus(this.status, {this.finalPrice});
 }
+
 class DriverUpdateVehicle extends DriverEvent {
   final String vehicleTypeId;
   final String licensePlate;
@@ -40,6 +48,7 @@ class DriverUpdateVehicle extends DriverEvent {
     required this.vehicleColor,
   });
 }
+
 class DriverResetState extends DriverEvent {}
 
 // ── State ───────────────────────────────────────────────────
@@ -130,7 +139,10 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     return super.close();
   }
 
-  Future<void> _onCheckActiveRide(DriverCheckActiveRide event, Emitter<DriverState> emit) async {
+  Future<void> _onCheckActiveRide(
+    DriverCheckActiveRide event,
+    Emitter<DriverState> emit,
+  ) async {
     try {
       final token = await _getToken();
       if (token == null) return;
@@ -143,7 +155,10 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     } catch (_) {}
   }
 
-  Future<void> _onLoadProfile(DriverLoadProfile event, Emitter<DriverState> emit) async {
+  Future<void> _onLoadProfile(
+    DriverLoadProfile event,
+    Emitter<DriverState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final token = await _getToken();
@@ -156,7 +171,10 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     }
   }
 
-  Future<void> _onToggleOnline(DriverToggleOnline event, Emitter<DriverState> emit) async {
+  Future<void> _onToggleOnline(
+    DriverToggleOnline event,
+    Emitter<DriverState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final token = await _getToken();
@@ -203,7 +221,10 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     _locationTimer = null;
   }
 
-  Future<void> _onPollPendingRides(DriverPollPendingRides event, Emitter<DriverState> emit) async {
+  Future<void> _onPollPendingRides(
+    DriverPollPendingRides event,
+    Emitter<DriverState> emit,
+  ) async {
     if (!state.isOnline || state.currentRide != null) {
       _stopPendingRidesPolling();
       return;
@@ -211,32 +232,45 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     try {
       final token = await _getToken();
       if (token == null) return;
-      
+
       final pos = await locationService.getCurrentPosition();
-      final rides = await repository.getPendingRides(pos.latitude, pos.longitude, 5, token);
+      final rides = await repository.getPendingRides(
+        pos.latitude,
+        pos.longitude,
+        5,
+        token,
+      );
       emit(state.copyWith(pendingRides: rides));
     } catch (e) {
       // If GPS fails, do not poll to prevent fetching rides with invalid coordinates.
     }
   }
 
-  Future<void> _onUpdateLocation(DriverUpdateLocation event, Emitter<DriverState> emit) async {
+  Future<void> _onUpdateLocation(
+    DriverUpdateLocation event,
+    Emitter<DriverState> emit,
+  ) async {
     try {
       final token = await _getToken();
       if (token == null) return;
       final pos = await locationService.getCurrentPosition();
-      emit(state.copyWith(currentLocation: LatLng(pos.latitude, pos.longitude)));
+      emit(
+        state.copyWith(currentLocation: LatLng(pos.latitude, pos.longitude)),
+      );
       await repository.updateLocation(pos.latitude, pos.longitude, token);
     } catch (_) {}
   }
 
-  Future<void> _onAcceptRide(DriverAcceptRide event, Emitter<DriverState> emit) async {
+  Future<void> _onAcceptRide(
+    DriverAcceptRide event,
+    Emitter<DriverState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final token = await _getToken();
       if (token == null) throw Exception('Chưa đăng nhập');
       await repository.acceptRide(event.rideId, event.version, token);
-      
+
       final activeRide = await repository.getCurrentRide(token);
       emit(state.copyWith(currentRide: activeRide, isLoading: false));
 
@@ -246,19 +280,29 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
         _startLocationUpdates();
       }
     } catch (e) {
-      emit(state.copyWith(error: 'Không thể nhận chuyến: $e', isLoading: false));
+      emit(
+        state.copyWith(error: 'Không thể nhận chuyến: $e', isLoading: false),
+      );
     }
   }
 
-  Future<void> _onUpdateRideStatus(DriverUpdateRideStatus event, Emitter<DriverState> emit) async {
+  Future<void> _onUpdateRideStatus(
+    DriverUpdateRideStatus event,
+    Emitter<DriverState> emit,
+  ) async {
     if (state.currentRide == null) return;
     emit(state.copyWith(isLoading: true));
     try {
       final token = await _getToken();
       if (token == null) throw Exception('Chưa đăng nhập');
       final rideId = state.currentRide!.id;
-      
-      await repository.updateRideStatus(rideId, event.status, event.finalPrice, token);
+
+      await repository.updateRideStatus(
+        rideId,
+        event.status,
+        event.finalPrice,
+        token,
+      );
 
       if (event.status == 'Completed' || event.status == 'Cancelled') {
         emit(state.copyWith(clearCurrentRide: true, isLoading: false));
@@ -271,11 +315,16 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
         emit(state.copyWith(currentRide: updatedRide, isLoading: false));
       }
     } catch (e) {
-      emit(state.copyWith(error: 'Lỗi cập nhật tiến trình: $e', isLoading: false));
+      emit(
+        state.copyWith(error: 'Lỗi cập nhật tiến trình: $e', isLoading: false),
+      );
     }
   }
 
-  Future<void> _onUpdateVehicle(DriverUpdateVehicle event, Emitter<DriverState> emit) async {
+  Future<void> _onUpdateVehicle(
+    DriverUpdateVehicle event,
+    Emitter<DriverState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final token = await _getToken();
@@ -290,7 +339,9 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
 
       emit(state.copyWith(vehicle: updatedVehicle, isLoading: false));
     } catch (e) {
-      emit(state.copyWith(error: 'Lỗi cập nhật phương tiện: $e', isLoading: false));
+      emit(
+        state.copyWith(error: 'Lỗi cập nhật phương tiện: $e', isLoading: false),
+      );
     }
   }
 

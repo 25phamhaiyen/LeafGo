@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import 'dart:convert';
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class AuthLocalDataSource {

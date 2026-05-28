@@ -2,9 +2,13 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:leafgo_app/models/admin_models.dart';
-import 'package:leafgo_app/models/auth_models.dart';
-
+import 'package:leafgo_app/models/admin/ride/admin_ride.dart';
+import 'package:leafgo_app/models/admin/statistics/statistics_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/admin_user_model.dart';
+import 'package:leafgo_app/models/admin/userManagement/paginated_response_model.dart';
+import 'package:leafgo_app/models/admin/vehicle/vehicle_type.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
+import 'package:leafgo_app/models/auth/response/api_error.dart';
 
 abstract class AdminRemoteDataSource {
   // Users

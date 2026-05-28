@@ -6,10 +6,14 @@
 // BLoC calls use cases; use cases call repository.
 // ─────────────────────────────────────────────────────────────
 
-
-
 // ── 1. Register ───────────────────────────────────────────────
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/request/change_password_request.dart';
+import 'package:leafgo_app/models/auth/request/login_request.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
+import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
+import 'package:leafgo_app/models/auth/token/token_info_models.dart';
+import 'package:leafgo_app/models/auth/token/token_model.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:leafgo_app/services/repositories/auth_repository.dart';
 
 class RegisterUseCase {
