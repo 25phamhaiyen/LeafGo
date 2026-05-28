@@ -57,6 +57,32 @@ class VehicleType {
   }
 }
 
+class RideUserModel {
+  final String id;
+  final String fullName;
+  final String phoneNumber;
+  final double? rating;
+  final int? totalRides;
+
+  RideUserModel({
+    required this.id,
+    required this.fullName,
+    required this.phoneNumber,
+    this.rating,
+    this.totalRides,
+  });
+
+  factory RideUserModel.fromJson(Map<String, dynamic> json) {
+    return RideUserModel(
+      id: json['id'] ?? '',
+      fullName: json['fullName'] ?? json['name'] ?? 'Hành khách',
+      phoneNumber: json['phoneNumber'] ?? json['phone'] ?? '',
+      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : null,
+      totalRides: json['totalRides'] as int?,
+    );
+  }
+}
+
 class RideModel {
   final String id;
   final String status;
@@ -72,6 +98,7 @@ class RideModel {
   final double? finalPrice;
   final String? notes;
   final DriverModel? driver;
+  final RideUserModel? user;
 
   RideModel({
     required this.id,
@@ -88,6 +115,7 @@ class RideModel {
     this.finalPrice,
     this.notes,
     this.driver,
+    this.user,
   });
 
   factory RideModel.fromJson(Map<String, dynamic> json) {
@@ -106,6 +134,7 @@ class RideModel {
       finalPrice: json['finalPrice'] != null ? (json['finalPrice'] as num).toDouble() : null,
       notes: json['notes'],
       driver: json['driver'] != null ? DriverModel.fromJson(json['driver']) : null,
+      user: json['user'] != null ? RideUserModel.fromJson(json['user']) : null,
     );
   }
 }

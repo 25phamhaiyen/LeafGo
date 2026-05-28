@@ -218,15 +218,19 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     String token,
   ) async {
     final response = await client.post(
-      Uri.parse('$baseUrl/api/Rides/$rideId/rate'),
+      Uri.parse('$baseUrl/api/Ratings'),
       headers: authHeaders(token),
-      body: json.encode({'rating': rating, 'comment': comment}),
+      body: json.encode({
+        'rideId': rideId,
+        'rating': rating,
+        'comment': comment,
+      }),
     );
 
     print('RATE RIDE: ${response.statusCode}');
     print(response.body);
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to submit rating');
     }
   }

@@ -4,6 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
+import 'package:leafgo_app/models/booking_models.dart';
+import '../chat_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -23,7 +25,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final state = context.read<BookingBloc>().state;
     final pickup = state.pickupLocation;
     final dropoff = state.dropoffLocation;
-    
+
     if (pickup != null && dropoff != null) {
       context.read<BookingBloc>().add(BookingSelectLocation(dropoff, true));
       context.read<BookingBloc>().add(BookingSelectLocation(pickup, false));
@@ -36,6 +38,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
+  /// Map vehicle type name to an icon. Extend as needed.
+  IconData _vehicleIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('xe máy') || n.contains('motor') || n.contains('bike')) {
+      return Icons.two_wheeler;
+    } else if (n.contains('tải') || n.contains('truck')) {
+      return Icons.local_shipping;
+    } else if (n.contains('7 chỗ') || n.contains('suv') || n.contains('van')) {
+      return Icons.airport_shuttle;
+    } else if (n.contains('4 chỗ') ||
+        n.contains('sedan') ||
+        n.contains('car') ||
+        n.contains('ô tô')) {
+      return Icons.directions_car;
+    } else if (n.contains('điện') || n.contains('electric')) {
+      return Icons.electric_car;
+    } else {
+      return Icons.directions_car_filled;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF10B981);
@@ -43,26 +66,29 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     return BlocListener<BookingBloc, BookingState>(
       listener: (context, state) {
         if (state.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.error!)));
         }
-        
+
         if (state.resetCounter != _lastHandledResetCounter) {
           _lastHandledResetCounter = state.resetCounter;
           _pickupController.clear();
           _destController.clear();
         }
 
-        // Auto-populate controllers from confirmed selections. Do not clear them
-        // while searching, because search temporarily clears the selected location.
-        if (state.pickupLocation != null && _pickupController.text != state.pickupLocation!.fullAddress) {
+        if (state.pickupLocation != null &&
+            _pickupController.text != state.pickupLocation!.fullAddress) {
           _pickupController.text = state.pickupLocation!.fullAddress;
         }
 
-        if (state.dropoffLocation != null && _destController.text != state.dropoffLocation!.fullAddress) {
+        if (state.dropoffLocation != null &&
+            _destController.text != state.dropoffLocation!.fullAddress) {
           _destController.text = state.dropoffLocation!.fullAddress;
         }
 
-        if (state.pickupLocation != null && state.pickupLocation!.hasValidCoordinates) {
+        if (state.pickupLocation != null &&
+            state.pickupLocation!.hasValidCoordinates) {
           _mapController.move(state.pickupLocation!.toLatLng, 15);
         }
       },
@@ -70,41 +96,55 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         backgroundColor: const Color(0xFFF3F4F6),
         body: Stack(
           children: [
-            // 1. Full Screen Map in background
-            Positioned.fill(
-              child: _buildMap(),
-            ),
+            // 1. Full Screen Map
+            Positioned.fill(child: _buildMap()),
 
-            // 2. Leaf Go Badge Overlay at top
+            // 2. Leaf Go Badge
             Positioned(
               top: MediaQuery.of(context).padding.top + 16,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 8),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
-                      child: const Icon(Icons.eco, color: Colors.white, size: 14),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.eco,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Leaf Go',
-                      style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // Zoom Controls overlay
+            // 3. Zoom Controls
             Positioned(
               top: MediaQuery.of(context).padding.top + 16,
               right: 16,
@@ -112,34 +152,62 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 8),
+                  ],
                 ),
                 child: Column(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.add, color: Colors.black87, size: 20),
-                      onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1),
-                      constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+                      icon: const Icon(
+                        Icons.add,
+                        color: Colors.black87,
+                        size: 20,
+                      ),
+                      onPressed: () => _mapController.move(
+                        _mapController.camera.center,
+                        _mapController.camera.zoom + 1,
+                      ),
+                      constraints: const BoxConstraints.tightFor(
+                        width: 38,
+                        height: 38,
+                      ),
                     ),
                     const Divider(height: 1),
                     IconButton(
-                      icon: const Icon(Icons.remove, color: Colors.black87, size: 20),
-                      onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1),
-                      constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+                      icon: const Icon(
+                        Icons.remove,
+                        color: Colors.black87,
+                        size: 20,
+                      ),
+                      onPressed: () => _mapController.move(
+                        _mapController.camera.center,
+                        _mapController.camera.zoom - 1,
+                      ),
+                      constraints: const BoxConstraints.tightFor(
+                        width: 38,
+                        height: 38,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // 3. Bottom Premium Booking Card Sheet
+            // 4. Bottom Booking Card
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(0, -3))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 15,
+                      offset: Offset(0, -3),
+                    ),
+                  ],
                 ),
                 child: SafeArea(
                   top: false,
@@ -154,8 +222,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 ),
               ),
             ),
-
-
           ],
         ),
       ),
@@ -172,8 +238,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           // Drag handle
           Center(
             child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -188,54 +258,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 1. Vehicle selection dropdown
-          const Text(
-            'Loại phương tiện',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButtonFormField<String>(
-                value: state.selectedVehicleTypeId,
-                isExpanded: true,
-                decoration: const InputDecoration(border: InputBorder.none),
-                hint: const Text('Chọn loại phương tiện', style: TextStyle(fontSize: 13)),
-                items: state.vehicleTypes.map((type) {
-                  return DropdownMenuItem<String>(
-                    value: type.id,
-                    child: Text(
-                      '${type.name} - ${type.pricePerKm.toInt()}đ/km',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    context.read<BookingBloc>().add(BookingSelectVehicleType(val));
-                  }
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // 2. Pickup Location Form
+          // ── 1. Pickup Location ──────────────────────────────────────
           Row(
-            children: [
-              const Icon(Icons.fiber_manual_record, color: Colors.green, size: 12),
-              const SizedBox(width: 6),
-              const Text(
+            children: const [
+              Icon(Icons.fiber_manual_record, color: Colors.green, size: 12),
+              SizedBox(width: 6),
+              Text(
                 'Điểm đón',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
               ),
             ],
           ),
@@ -248,8 +282,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           if (state.searchResults.isNotEmpty && _isPickupActive)
             _buildInlineSuggestions(state),
-          
-          // 3. Swap Locations Button
+
+          // Swap button
           const SizedBox(height: 6),
           Center(
             child: Container(
@@ -257,26 +291,39 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.grey.shade200),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4),
+                ],
               ),
               child: IconButton(
-                icon: const Icon(Icons.swap_vert, color: Color(0xFF10B981), size: 18),
+                icon: const Icon(
+                  Icons.swap_vert,
+                  color: Color(0xFF10B981),
+                  size: 18,
+                ),
                 onPressed: _swapLocations,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 32,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 6),
 
-          // 4. Destination Location Form
+          // ── 2. Destination Location ─────────────────────────────────
           Row(
-            children: [
-              const Icon(Icons.navigation, color: Colors.red, size: 12),
-              const SizedBox(width: 6),
-              const Text(
+            children: const [
+              Icon(Icons.navigation, color: Colors.red, size: 12),
+              SizedBox(width: 6),
+              Text(
                 'Điểm đến',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
               ),
             ],
           ),
@@ -289,22 +336,132 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           if (state.searchResults.isNotEmpty && !_isPickupActive)
             _buildInlineSuggestions(state),
-          const SizedBox(height: 12),
 
-          // 5. Confirmation and Cancel actions
+          const SizedBox(height: 16),
+
+          // ── 3. Vehicle Type Selection (visual cards) ────────────────
+          if (state.vehicleTypes.isNotEmpty) ...[
+            const Text(
+              'Loại phương tiện',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: state.vehicleTypes.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final type = state.vehicleTypes[index];
+                  final isSelected = state.selectedVehicleTypeId == type.id;
+                  return GestureDetector(
+                    onTap: () => context.read<BookingBloc>().add(
+                      BookingSelectVehicleType(type.id),
+                    ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFE6F7F0)
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFF10B981)
+                              : Colors.grey.shade200,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.15),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : [],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF10B981)
+                                  : Colors.grey.shade200,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _vehicleIcon(type.name),
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            type.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? const Color(0xFF10B981)
+                                  : Colors.black54,
+                            ),
+                          ),
+                          Text(
+                            '${type.pricePerKm.toInt()}đ/km',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: isSelected
+                                  ? const Color(0xFF10B981)
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // ── 4. Confirm / Cancel ─────────────────────────────────────
           Row(
             children: [
               Expanded(
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: (state.pickupLocation != null && state.dropoffLocation != null)
+                    color:
+                        (state.pickupLocation != null &&
+                            state.dropoffLocation != null)
                         ? const Color(0xFFE6F7F0)
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: (state.pickupLocation != null && state.dropoffLocation != null)
-                          ? primaryColor.withOpacity(0.3)
+                      color:
+                          (state.pickupLocation != null &&
+                              state.dropoffLocation != null)
+                          ? const Color(0xFF10B981).withOpacity(0.3)
                           : Colors.grey.shade200,
                     ),
                   ),
@@ -314,8 +471,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       children: [
                         Icon(
                           Icons.check_circle_outline,
-                          color: (state.pickupLocation != null && state.dropoffLocation != null)
-                              ? primaryColor
+                          color:
+                              (state.pickupLocation != null &&
+                                  state.dropoffLocation != null)
+                              ? const Color(0xFF10B981)
                               : Colors.grey,
                           size: 14,
                         ),
@@ -323,8 +482,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         Text(
                           'Đã xác nhận',
                           style: TextStyle(
-                            color: (state.pickupLocation != null && state.dropoffLocation != null)
-                                ? primaryColor
+                            color:
+                                (state.pickupLocation != null &&
+                                    state.dropoffLocation != null)
+                                ? const Color(0xFF10B981)
                                 : Colors.grey,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -337,23 +498,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               const SizedBox(width: 10),
               OutlinedButton(
-                onPressed: () {
-                  context.read<BookingBloc>().add(BookingReset());
-                },
+                onPressed: () =>
+                    context.read<BookingBloc>().add(BookingReset()),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.grey.shade700,
                   side: BorderSide(color: Colors.grey.shade300),
                   minimumSize: const Size(50, 40),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
-                child: const Text('Hủy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                child: const Text(
+                  'Hủy',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // 6. Summary Card
+          // ── 5. Summary Card ─────────────────────────────────────────
           if (state.priceData != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -364,15 +529,26 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               child: Column(
                 children: [
-                  _buildSummaryRow('Khoảng cách', '${state.priceData!['distance']} km', isBold: false),
+                  _buildSummaryRow(
+                    'Khoảng cách',
+                    '${state.priceData!['distance']} km',
+                    isBold: false,
+                  ),
                   const Divider(height: 12),
-                  _buildSummaryRow('Thời gian', '${state.priceData!['estimatedDuration']} phút', isBold: false),
+                  _buildSummaryRow(
+                    'Thời gian',
+                    '${state.priceData!['estimatedDuration']} phút',
+                    isBold: false,
+                  ),
                   const Divider(height: 12),
                   _buildSummaryRow(
                     'Giá dự kiến',
-                    '${NumberFormat.simpleCurrency(locale: 'vi_VN', decimalDigits: 0).format(state.priceData!['estimatedPrice'])}',
+                    NumberFormat.simpleCurrency(
+                      locale: 'vi_VN',
+                      decimalDigits: 0,
+                    ).format(state.priceData!['estimatedPrice']),
                     isBold: true,
-                    valueColor: primaryColor,
+                    valueColor: const Color(0xFF10B981),
                   ),
                 ],
               ),
@@ -380,23 +556,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             const SizedBox(height: 16),
           ],
 
-          // 7. Book Button
+          // ── 6. Book Button ──────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: (state.pickupLocation != null && state.dropoffLocation != null && state.selectedVehicleTypeId != null)
+              onPressed:
+                  (state.pickupLocation != null &&
+                      state.dropoffLocation != null &&
+                      state.selectedVehicleTypeId != null)
                   ? () => context.read<BookingBloc>().add(BookingRequestRide())
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
+                backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 disabledBackgroundColor: Colors.grey.shade200,
                 disabledForegroundColor: Colors.grey.shade400,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
-              child: const Text('Đặt xe ngay', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Đặt xe ngay',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -406,6 +590,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Widget _buildMobileActiveRidePanel(BookingState state, Color primaryColor) {
     final ride = state.currentRide!;
+    if (ride.status == 'Completed') {
+      return _ActiveRideRatingPanel(ride: ride, primaryColor: primaryColor);
+    }
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -414,18 +601,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         children: [
           Center(
             child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 12),
-
           const Text(
             'Hành trình hiện tại',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 16),
-          
+
           // Status Box
           Container(
             padding: const EdgeInsets.all(14),
@@ -436,10 +630,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
             child: Row(
               children: [
-                const SizedBox(
-                  width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
-                ),
+                ride.status == 'Completed'
+                    ? const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      )
+                    : ride.status == 'Cancelled'
+                    ? const Icon(Icons.cancel, color: Colors.red, size: 20)
+                    : const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF10B981),
+                        ),
+                      ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -447,11 +653,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     children: [
                       Text(
                         _getStatusText(ride.status),
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: primaryColor,
+                        ),
                       ),
                       Text(
-                        ride.driver == null ? 'Đang tìm tài xế gần bạn...' : 'Tài xế đang đến điểm đón',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        ride.driver == null
+                            ? 'Đang tìm tài xế gần bạn...'
+                            : 'Tài xế đang đến điểm đón',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ),
@@ -460,19 +675,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Trip Info
+
           _buildSummaryRow('Điểm đón', ride.pickupAddress, isBold: false),
           const SizedBox(height: 6),
           _buildSummaryRow('Điểm đến', ride.destinationAddress, isBold: false),
           const SizedBox(height: 6),
           _buildSummaryRow(
-            'Số tiền', 
-            '${NumberFormat.simpleCurrency(locale: 'vi_VN', decimalDigits: 0).format(ride.estimatedPrice)}', 
+            'Số tiền',
+            NumberFormat.simpleCurrency(
+              locale: 'vi_VN',
+              decimalDigits: 0,
+            ).format(ride.estimatedPrice),
             isBold: true,
             valueColor: primaryColor,
           ),
-          
+
           if (ride.driver != null) ...[
             const Divider(height: 24),
             Row(
@@ -480,53 +697,117 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: const Color(0xFFE6F7F0),
-                  child: const Icon(Icons.person, color: Color(0xFF10B981), size: 18),
+                  child: const Icon(
+                    Icons.person,
+                    color: Color(0xFF10B981),
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ride.driver!.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       Text(
-                        ride.driver!.vehicle?.licensePlate ?? 'N/A', 
-                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11),
+                        ride.driver!.fullName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        ride.driver!.vehicle?.licensePlate ?? 'N/A',
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(color: const Color(0xFFE6F7F0), borderRadius: BorderRadius.circular(10)),
-                  child: IconButton(
-                    icon: const Icon(Icons.phone, color: Color(0xFF10B981), size: 16),
-                    onPressed: () {},
-                    constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-                    padding: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F7F0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.chat,
+                          color: Color(0xFF10B981),
+                          size: 16,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                rideId: ride.id,
+                                currentUserId: ride.user?.id ?? 'user', // need better userId, maybe from state
+                                recipientName: ride.driver?.fullName ?? 'Tài xế',
+                              ),
+                            ),
+                          );
+                        },
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.phone,
+                          color: Color(0xFF10B981),
+                          size: 16,
+                        ),
+                        onPressed: () {},
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ],
-          
+
           const SizedBox(height: 16),
-          
+
           if (ride.status == 'Pending')
             OutlinedButton(
-              onPressed: () => context.read<BookingBloc>().add(BookingCancelRide('Người dùng hủy')),
+              onPressed: () => context.read<BookingBloc>().add(
+                BookingCancelRide('Người dùng hủy'),
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.redAccent),
                 minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: const Text('Hủy chuyến xe', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              child: const Text(
+                'Hủy chuyến xe',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {required bool isBold, Color? valueColor}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    required bool isBold,
+    Color? valueColor,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -564,7 +845,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
       ),
       child: ListView.separated(
         shrinkWrap: true,
@@ -575,16 +858,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           final loc = state.searchResults[index];
           return ListTile(
             dense: true,
-            leading: const Icon(Icons.place_outlined, color: Color(0xFF10B981), size: 16),
+            leading: const Icon(
+              Icons.place_outlined,
+              color: Color(0xFF10B981),
+              size: 16,
+            ),
             title: Text(
-              loc.fullAddress, 
-              maxLines: 1, 
+              loc.fullAddress,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 12, color: Colors.black87),
             ),
             onTap: () {
               FocusScope.of(context).unfocus();
-              context.read<BookingBloc>().add(BookingSelectLocation(loc, _isPickupActive));
+              context.read<BookingBloc>().add(
+                BookingSelectLocation(loc, _isPickupActive),
+              );
             },
           );
         },
@@ -595,11 +884,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Widget _buildMap() {
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
-        final routeCoordinates = state.routeCoordinates.where(_isValidLatLng).toList();
+        final routeCoordinates = state.routeCoordinates
+            .where(_isValidLatLng)
+            .toList();
         return FlutterMap(
           mapController: _mapController,
           options: const MapOptions(
-            initialCenter: LatLng(10.8458, 106.7945), // Lê Văn Việt HCMC
+            initialCenter: LatLng(10.8458, 106.7945),
             initialZoom: 13,
           ),
           children: [
@@ -619,23 +910,41 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
             MarkerLayer(
               markers: [
-                if (state.pickupLocation != null && state.pickupLocation!.hasValidCoordinates)
+                if (state.pickupLocation != null &&
+                    state.pickupLocation!.hasValidCoordinates)
                   Marker(
                     point: state.pickupLocation!.toLatLng,
-                    width: 36, height: 36,
-                    child: const Icon(Icons.location_on, color: Colors.green, size: 36),
+                    width: 36,
+                    height: 36,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.green,
+                      size: 36,
+                    ),
                   ),
-                if (state.dropoffLocation != null && state.dropoffLocation!.hasValidCoordinates)
+                if (state.dropoffLocation != null &&
+                    state.dropoffLocation!.hasValidCoordinates)
                   Marker(
                     point: state.dropoffLocation!.toLatLng,
-                    width: 36, height: 36,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 36),
+                    width: 36,
+                    height: 36,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 36,
+                    ),
                   ),
-                if (state.driverLocation != null && _isValidLatLng(state.driverLocation!))
+                if (state.driverLocation != null &&
+                    _isValidLatLng(state.driverLocation!))
                   Marker(
                     point: state.driverLocation!,
-                    width: 36, height: 36,
-                    child: const Icon(Icons.directions_car, color: Colors.blue, size: 36),
+                    width: 36,
+                    height: 36,
+                    child: const Icon(
+                      Icons.directions_car,
+                      color: Colors.blue,
+                      size: 36,
+                    ),
                   ),
               ],
             ),
@@ -652,7 +961,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         point.longitude <= 180;
   }
 
-  Widget _buildLocationInput({required TextEditingController controller, required String hint, required Color iconColor, required bool isPickup}) {
+  Widget _buildLocationInput({
+    required TextEditingController controller,
+    required String hint,
+    required Color iconColor,
+    required bool isPickup,
+  }) {
     return Container(
       height: 46,
       decoration: BoxDecoration(
@@ -663,15 +977,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       child: TextField(
         controller: controller,
         style: const TextStyle(fontSize: 13),
-        onTap: () {
-          setState(() {
-            _isPickupActive = isPickup;
-          });
-        },
+        onTap: () => setState(() => _isPickupActive = isPickup),
         onChanged: (val) {
-          setState(() {
-            _isPickupActive = isPickup;
-          });
+          setState(() => _isPickupActive = isPickup);
           context.read<BookingBloc>().add(BookingSearchLocation(val, isPickup));
         },
         decoration: InputDecoration(
@@ -680,13 +988,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           prefixIcon: Padding(
             padding: const EdgeInsets.all(14),
             child: Container(
-              width: 8, height: 8,
-              decoration: BoxDecoration(color: iconColor, shape: BoxShape.circle),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: iconColor,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           suffixIcon: IconButton(
             icon: const Icon(Icons.gps_fixed, size: 16, color: Colors.grey),
-            onPressed: () => context.read<BookingBloc>().add(BookingGetCurrentLocation(isPickup)),
+            onPressed: () => context.read<BookingBloc>().add(
+              BookingGetCurrentLocation(isPickup),
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -699,14 +1013,200 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'Pending': return 'Đang tìm xe...';
-      case 'Accepted': return 'Đã tìm thấy tài xế';
-      case 'DriverArriving': return 'Tài xế đang đến';
-      case 'DriverArrived': return 'Tài xế đã đến';
-      case 'InProgress': return 'Đang di chuyển';
-      case 'Completed': return 'Hoàn thành';
-      case 'Cancelled': return 'Đã hủy';
-      default: return status;
+      case 'Pending':
+        return 'Đang tìm xe...';
+      case 'Accepted':
+        return 'Đã tìm thấy tài xế';
+      case 'DriverArriving':
+        return 'Tài xế đang đến';
+      case 'DriverArrived':
+        return 'Tài xế đã đến';
+      case 'InProgress':
+        return 'Đang di chuyển';
+      case 'Completed':
+        return 'Hoàn thành';
+      case 'Cancelled':
+        return 'Đã hủy';
+      default:
+        return status;
     }
+  }
+}
+
+class _ActiveRideRatingPanel extends StatefulWidget {
+  final RideModel ride;
+  final Color primaryColor;
+
+  const _ActiveRideRatingPanel({
+    required this.ride,
+    required this.primaryColor,
+  });
+
+  @override
+  State<_ActiveRideRatingPanel> createState() => _ActiveRideRatingPanelState();
+}
+
+class _ActiveRideRatingPanelState extends State<_ActiveRideRatingPanel> {
+  int _rating = 5;
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Success icon & text
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE6F7F0),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              color: Color(0xFF10B981),
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Chuyến đi đã hoàn thành!',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.ride.driver != null
+                ? 'Hãy đánh giá dịch vụ của tài xế ${widget.ride.driver!.fullName}'
+                : 'Hãy để lại đánh giá của bạn về chuyến đi nhé!',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Stars selection
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final starValue = index + 1;
+              final isSelected = starValue <= _rating;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _rating = starValue;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: isSelected ? Colors.amber : Colors.grey.shade300,
+                    size: 42,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+
+          // Comment Textfield
+          TextField(
+            controller: _commentController,
+            maxLines: 3,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Nhập ý kiến đóng góp của bạn (không bắt buộc)...',
+              hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF10B981)),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    // Skip rating, reset state
+                    context.read<BookingBloc>().add(BookingReset());
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade600,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Bỏ qua', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.read<BookingBloc>().add(
+                          BookingSubmitRating(_rating, _commentController.text),
+                        );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

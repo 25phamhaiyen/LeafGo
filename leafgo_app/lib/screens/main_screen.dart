@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../injection_container.dart';
+import '../injection_container.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
-import '../../blocs/user/user_bloc.dart';
-import 'user_home_screen.dart';
+import '../blocs/user/user_bloc.dart';
+import 'user/user_home_screen.dart';
 import 'profile_screen.dart';
-import 'history_screen.dart';
+import 'user/history_screen.dart';
 
 // Driver Features
 import 'package:leafgo_app/screens/driver/driver_home_screen.dart';
