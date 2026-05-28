@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'injection_container.dart';
 import 'blocs/auth/auth_bloc.dart';
 import 'screens/auth/login_screen.dart';
@@ -10,6 +11,7 @@ import 'screens/admin/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('vi_VN', null);
   await setupDI();
   runApp(const LeafGoApp());
 }
