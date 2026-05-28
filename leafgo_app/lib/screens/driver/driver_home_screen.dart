@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/models/booking_models.dart';
+import '../chat_screen.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
 import '../../injection_container.dart';
@@ -1271,7 +1272,16 @@ class _ActiveRidePanel extends StatelessWidget {
                   bgColor: const Color(0xFFEFF6FF),
                   borderColor: const Color(0xFFBFDBFE),
                   onTap: () {
-                    // TODO: implement message
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          rideId: ride.id,
+                          currentUserId: ride.driver?.id ?? 'driver', 
+                          recipientName: ride.user?.fullName ?? 'Khách hàng',
+                        ),
+                      ),
+                    );
                   },
                 ),
               ],

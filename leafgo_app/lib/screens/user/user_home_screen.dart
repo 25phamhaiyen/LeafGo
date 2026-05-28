@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/models/booking_models.dart';
+import '../chat_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -730,18 +731,46 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     color: const Color(0xFFE6F7F0),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.phone,
-                      color: Color(0xFF10B981),
-                      size: 16,
-                    ),
-                    onPressed: () {},
-                    constraints: const BoxConstraints.tightFor(
-                      width: 32,
-                      height: 32,
-                    ),
-                    padding: EdgeInsets.zero,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.chat,
+                          color: Color(0xFF10B981),
+                          size: 16,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                rideId: ride.id,
+                                currentUserId: ride.user?.id ?? 'user', // need better userId, maybe from state
+                                recipientName: ride.driver?.fullName ?? 'Tài xế',
+                              ),
+                            ),
+                          );
+                        },
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.phone,
+                          color: Color(0xFF10B981),
+                          size: 16,
+                        ),
+                        onPressed: () {},
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
                 ),
               ],
