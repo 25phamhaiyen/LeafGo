@@ -9,8 +9,14 @@ import 'screens/auth/forgot_password_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await initializeDateFormatting('vi_VN', null);
   await setupDI();
   runApp(const LeafGoApp());
