@@ -10,6 +10,7 @@ import 'user/history_screen.dart';
 // Driver Features
 import 'package:leafgo_app/screens/driver/driver_home_screen.dart';
 import 'package:leafgo_app/screens/driver/driver_stats_screen.dart';
+import 'package:leafgo_app/screens/driver/driver_history_screen.dart';
 import 'package:leafgo_app/blocs/driver/driver_bloc.dart';
 
 class MainScreen extends StatefulWidget {
@@ -41,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
               ? [
                   const DriverHomeScreen(),
                   const DriverStatsScreen(),
+                  const DriverHistoryScreen(),
                   const ProfileScreen(),
                 ]
               : [
@@ -62,6 +64,11 @@ class _MainScreenState extends State<MainScreen> {
                     icon: Icon(Icons.analytics_outlined),
                     activeIcon: Icon(Icons.analytics),
                     label: 'Doanh thu',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.history_outlined),
+                    activeIcon: Icon(Icons.history),
+                    label: 'Lịch sử',
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.person_outline),

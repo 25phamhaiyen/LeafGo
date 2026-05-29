@@ -31,6 +31,7 @@ abstract class DriverRemoteDataSource {
     Map<String, dynamic> vehicleData,
     String token,
   );
+  Future<Map<String, dynamic>> getRideHistory(int page, int pageSize, String token);
 }
 
 class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
@@ -211,5 +212,20 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
       }
     }
     throw Exception('Failed to update vehicle: ${response.body}');
+  }
+
+  @override
+  Future<Map<String, dynamic>> getRideHistory(int page, int pageSize, String token) async {
+    final response = await client.get(
+      Uri.parse('$baseUrl/api/Drivers/ride-history?page=$page&pageSize=$pageSize'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data['data'];
+      }
+    }
+    throw Exception('Failed to load ride history: ${response.body}');
   }
 }

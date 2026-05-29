@@ -51,6 +51,8 @@ class DriverUpdateVehicle extends DriverEvent {
 
 class DriverResetState extends DriverEvent {}
 
+class DriverFetchHistory extends DriverEvent {}
+
 // ── State ───────────────────────────────────────────────────
 class DriverState {
   final bool isOnline;
@@ -61,6 +63,7 @@ class DriverState {
   final LatLng? currentLocation;
   final bool isLoading;
   final String? error;
+  final Map<String, dynamic>? historyData;
 
   DriverState({
     this.isOnline = false,
@@ -71,6 +74,7 @@ class DriverState {
     this.currentLocation,
     this.isLoading = false,
     this.error,
+    this.historyData,
   });
 
   DriverState copyWith({
@@ -82,6 +86,7 @@ class DriverState {
     LatLng? currentLocation,
     bool? isLoading,
     String? error,
+    Map<String, dynamic>? historyData,
     bool clearCurrentRide = false,
   }) {
     return DriverState(
@@ -93,6 +98,7 @@ class DriverState {
       currentLocation: currentLocation ?? this.currentLocation,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      historyData: historyData ?? this.historyData,
     );
   }
 }
@@ -123,6 +129,7 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     on<DriverUpdateRideStatus>(_onUpdateRideStatus);
     on<DriverUpdateVehicle>(_onUpdateVehicle);
     on<DriverResetState>(_onResetState);
+    on<DriverFetchHistory>(_onFetchHistory);
   }
 
   Future<String?> _getToken() async {
@@ -349,5 +356,20 @@ class DriverBloc extends Bloc<DriverEvent, DriverState> {
     _pollingTimer?.cancel();
     _locationTimer?.cancel();
     emit(DriverState());
+  }
+
+  Future<void> _onFetchHistory(
+    DriverFetchHistory event,
+    Emitter<DriverState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final token = await _getToken();
+      if (token == null) throw Exception('Chưa đăng nhập');
+      final data = await repository.getRideHistory(1, 100, token);
+      emit(state.copyWith(historyData: data, isLoading: false));
+    } catch (e) {
+      emit(state.copyWith(error: e.toString(), isLoading: false));
+    }
   }
 }

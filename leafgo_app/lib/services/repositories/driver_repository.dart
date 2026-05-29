@@ -31,6 +31,7 @@ abstract class DriverRepository {
     Map<String, dynamic> vehicleData,
     String token,
   );
+  Future<Map<String, dynamic>> getRideHistory(int page, int pageSize, String token);
 }
 
 class DriverRepositoryImpl implements DriverRepository {
@@ -86,4 +87,8 @@ class DriverRepositoryImpl implements DriverRepository {
     Map<String, dynamic> vehicleData,
     String token,
   ) => remote.updateVehicle(vehicleData, token);
+
+  @override
+  Future<Map<String, dynamic>> getRideHistory(int page, int pageSize, String token) =>
+      remote.getRideHistory(page, pageSize, token);
 }
