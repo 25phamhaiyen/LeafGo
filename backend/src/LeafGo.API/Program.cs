@@ -186,7 +186,12 @@ namespace LeafGo.API
                             }
 
                             return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
-                                (uri.Host == "localhost" || uri.Host == "127.0.0.1");
+                                (uri.Host == "localhost" || 
+                                 uri.Host == "127.0.0.1" || 
+                                 uri.Host == "[::1]" ||
+                                 uri.Host.StartsWith("192.168.") || 
+                                 uri.Host.StartsWith("10.") || 
+                                 uri.Host.StartsWith("172."));
                         })
                         .AllowAnyHeader()
                         .AllowAnyMethod()
@@ -249,6 +254,8 @@ namespace LeafGo.API
             }
 
             // app.UseHttpsRedirection();
+            app.UseCors("AllowFlutterWeb");
+
             // Serve static files for uploaded avatars
             var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 
@@ -268,7 +275,6 @@ namespace LeafGo.API
             // Add exception handling middleware
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-            app.UseCors("AllowFlutterWeb");
 
             app.UseAuthentication();
             app.UseAuthorization();

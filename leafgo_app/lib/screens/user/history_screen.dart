@@ -5,6 +5,7 @@ import '../../blocs/user/user_bloc.dart';
 import '../../injection_container.dart';
 import '../../services/datasources/auth_local_datasource.dart';
 import '../../services/repositories/booking_repository.dart';
+import '../../core/utils/avatar_utils.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -619,7 +620,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                         backgroundImage:
                             ride['driver']?['avatar'] != null &&
                                 ride['driver']['avatar'].toString().isNotEmpty
-                            ? NetworkImage(ride['driver']['avatar'])
+                            ? NetworkImage(normalizeAvatarUrl(ride['driver']['avatar']) ?? '')
                             : null,
                         child:
                             ride['driver']?['avatar'] == null ||
@@ -1232,7 +1233,7 @@ class _DetailSheet extends StatelessWidget {
                                 backgroundImage:
                                     driver['avatar'] != null &&
                                         driver['avatar'].toString().isNotEmpty
-                                    ? NetworkImage(driver['avatar'])
+                                    ? NetworkImage(normalizeAvatarUrl(driver['avatar']) ?? '')
                                     : null,
                                 child:
                                     driver['avatar'] == null ||
