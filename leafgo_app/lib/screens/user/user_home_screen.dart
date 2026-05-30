@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:leafgo_app/blocs/auth/auth_bloc.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
+import 'package:leafgo_app/core/utils/avatar_utils.dart';
 import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 
@@ -36,6 +38,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       context.read<BookingBloc>().add(BookingSelectLocation(dropoff, true));
       context.read<BookingBloc>().add(BookingReset());
     }
+  }
+
+  void _openRideChat(RideModel ride) {
+    final authState = context.read<AuthBloc>().state;
+    final authUserId = authState is AuthAuthenticated ? authState.user.id : '';
+    final rideUserId = ride.user?.id ?? '';
+    final currentUserId = rideUserId.isNotEmpty ? rideUserId : authUserId;
+
+    if (currentUserId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy thông tin người dùng')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          rideId: ride.id,
+          currentUserId: currentUserId,
+          recipientName: ride.driver?.fullName ?? 'Tài xế',
+        ),
+      ),
+    );
   }
 
   /// Map vehicle type name to an icon. Extend as needed.
@@ -694,15 +721,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             const Divider(height: 24),
             Row(
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: const Color(0xFFE6F7F0),
-                  child: const Icon(
-                    Icons.person,
-                    color: Color(0xFF10B981),
-                    size: 18,
-                  ),
-                ),
+                buildAvatarCircle(ride.driver!.avatar, radius: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -715,13 +734,50 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           fontSize: 13,
                         ),
                       ),
-                      Text(
-                        ride.driver!.vehicle?.licensePlate ?? 'N/A',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                        ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone,
+                            size: 12,
+                            color: Colors.black54,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              ride.driver!.phoneNumber,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.confirmation_number_outlined,
+                            size: 12,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              ride.driver!.vehicle?.licensePlate ?? 'N/A',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -739,21 +795,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           color: Color(0xFF10B981),
                           size: 16,
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                rideId: ride.id,
-                                currentUserId:
-                                    ride.user?.id ??
-                                    'user', // need better userId, maybe from state
-                                recipientName:
-                                    ride.driver?.fullName ?? 'Tài xế',
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => _openRideChat(ride),
                         constraints: const BoxConstraints.tightFor(
                           width: 32,
                           height: 32,
@@ -777,6 +819,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _openRideChat(ride),
+                icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                label: const Text(
+                  'Nhắn tin với tài xế',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(42),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
             ),
           ],
 

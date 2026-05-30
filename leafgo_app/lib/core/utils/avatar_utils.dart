@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:leafgo_app/core/constants/api_constants.dart';
 
@@ -19,7 +18,10 @@ String? normalizeAvatarUrl(String? url) {
   // If it's a full URL, check if it points to backend uploads or local hosts
   try {
     final uri = Uri.parse(url);
-    final isLocalHost = uri.host == '127.0.0.1' || uri.host == 'localhost' || uri.host == '10.0.2.2';
+    final isLocalHost =
+        uri.host == '127.0.0.1' ||
+        uri.host == 'localhost' ||
+        uri.host == '10.0.2.2';
     final isUploads = uri.path.contains('/uploads/');
 
     if (isLocalHost || isUploads) {
