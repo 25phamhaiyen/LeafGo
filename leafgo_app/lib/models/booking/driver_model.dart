@@ -1,4 +1,4 @@
-import 'package:leafgo_app/models/admin/userManagement/vehicle_info_model.dart';
+import 'package:leafgo_app/models/booking/vehicle_info.dart';
 
 class DriverModel {
   final String id;

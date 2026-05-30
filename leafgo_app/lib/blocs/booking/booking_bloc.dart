@@ -4,7 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/models/booking/location_model.dart';
 import 'package:leafgo_app/models/booking/ride_model.dart';
+import 'package:leafgo_app/models/booking/ride_user_model.dart';
 import 'package:leafgo_app/models/booking/vehicle_type.dart';
+import 'package:leafgo_app/models/booking/driver_model.dart';
 import 'package:leafgo_app/services/repositories/booking_repository.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/signalr_service.dart';
@@ -54,6 +56,11 @@ class BookingCheckActiveRide extends BookingEvent {}
 class BookingUpdateStatus extends BookingEvent {
   final String status;
   BookingUpdateStatus(this.status);
+}
+
+class BookingRideAccepted extends BookingEvent {
+  final Map<String, dynamic> data;
+  BookingRideAccepted(this.data);
 }
 
 class BookingReset extends BookingEvent {}
@@ -163,6 +170,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<BookingRequestRide>(_onRequestRide);
     on<BookingCancelRide>(_onCancelRide);
     on<BookingCheckActiveRide>(_onCheckActiveRide);
+    on<BookingRideAccepted>(_onRideAccepted);
     on<BookingUpdateStatus>(_onUpdateStatus);
     on<BookingUpdateDriverLocation>(_onUpdateDriverLocation);
     on<BookingSubmitRating>(_onSubmitRating);
@@ -201,7 +209,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
   void _setupSignalR() {
     signalRService.onRideAccepted((data) {
-      add(BookingUpdateStatus('Accepted'));
+      add(BookingRideAccepted(data));
       // Re-fetch full ride to get driver info
       add(BookingCheckActiveRide());
     });
@@ -487,7 +495,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       final ride = await repository.getActiveRide(_token!);
 
       if (ride != null) {
-        emit(state.copyWith(currentRide: ride, isLoading: false));
+        emit(
+          state.copyWith(
+            currentRide: _mergeRideDetails(ride),
+            isLoading: false,
+          ),
+        );
 
         await signalRService.joinRideGroup(ride.id);
       } else {
@@ -506,28 +519,32 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     }
   }
 
+  void _onRideAccepted(BookingRideAccepted event, Emitter<BookingState> emit) {
+    if (state.currentRide == null) return;
+
+    final driverJson = event.data['driver'] ?? event.data['Driver'];
+    final driver = driverJson is Map
+        ? DriverModel.fromJson(Map<String, dynamic>.from(driverJson))
+        : state.currentRide!.driver;
+
+    emit(
+      state.copyWith(
+        currentRide: _copyRide(
+          state.currentRide!,
+          status: 'Accepted',
+          driver: driver,
+        ),
+      ),
+    );
+  }
+
   void _onUpdateStatus(
     BookingUpdateStatus event,
     Emitter<BookingState> emit,
   ) async {
     if (state.currentRide == null) return;
 
-    final updatedRide = RideModel(
-      id: state.currentRide!.id,
-      status: event.status,
-      pickupAddress: state.currentRide!.pickupAddress,
-      pickupLatitude: state.currentRide!.pickupLatitude,
-      pickupLongitude: state.currentRide!.pickupLongitude,
-      destinationAddress: state.currentRide!.destinationAddress,
-      destinationLatitude: state.currentRide!.destinationLatitude,
-      destinationLongitude: state.currentRide!.destinationLongitude,
-      distance: state.currentRide!.distance,
-      estimatedDuration: state.currentRide!.estimatedDuration,
-      estimatedPrice: state.currentRide!.estimatedPrice,
-      finalPrice: state.currentRide!.finalPrice,
-      notes: state.currentRide!.notes,
-      driver: state.currentRide!.driver,
-    );
+    final updatedRide = _copyRide(state.currentRide!, status: event.status);
 
     // Ride ended
     if (event.status == 'Cancelled') {
@@ -557,6 +574,42 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     }
 
     emit(state.copyWith(currentRide: updatedRide));
+  }
+
+  RideModel _mergeRideDetails(RideModel ride) {
+    final current = state.currentRide;
+    if (current == null) return ride;
+
+    return _copyRide(
+      ride,
+      driver: ride.driver ?? current.driver,
+      user: ride.user ?? current.user,
+    );
+  }
+
+  RideModel _copyRide(
+    RideModel ride, {
+    String? status,
+    DriverModel? driver,
+    RideUserModel? user,
+  }) {
+    return RideModel(
+      id: ride.id,
+      status: status ?? ride.status,
+      pickupAddress: ride.pickupAddress,
+      pickupLatitude: ride.pickupLatitude,
+      pickupLongitude: ride.pickupLongitude,
+      destinationAddress: ride.destinationAddress,
+      destinationLatitude: ride.destinationLatitude,
+      destinationLongitude: ride.destinationLongitude,
+      distance: ride.distance,
+      estimatedDuration: ride.estimatedDuration,
+      estimatedPrice: ride.estimatedPrice,
+      finalPrice: ride.finalPrice,
+      notes: ride.notes,
+      driver: driver ?? ride.driver,
+      user: user ?? ride.user,
+    );
   }
 
   Future<void> _onSubmitRating(
