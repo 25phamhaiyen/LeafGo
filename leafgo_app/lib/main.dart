@@ -8,7 +8,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
 import 'screens/main_screen.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/admin_main_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 
@@ -44,7 +44,7 @@ class LeafGoApp extends StatelessWidget {
           '/register': (ctx) => const RegisterScreen(),
           '/forgot-password': (ctx) => const ForgotPasswordScreen(),
           '/home': (ctx) => const MainScreen(),
-          '/admin-dashboard': (ctx) => const AdminDashboardScreen(),
+          '/admin-dashboard': (ctx) => const AdminMainScreen(),
           '/onboarding': (ctx) => const OnboardingScreen(),
         },
       ),

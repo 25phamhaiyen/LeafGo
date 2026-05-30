@@ -42,7 +42,14 @@ class AdminRideModel {
   factory AdminRideModel.fromJson(Map<String, dynamic> json) {
     return AdminRideModel(
       id: json['id'] as String,
-      user: RideUser.fromJson(json['user']),
+      user: json['user'] != null
+          ? RideUser.fromJson(json['user'])
+          : const RideUser(
+              id: '',
+              fullName: 'Unknown User',
+              phoneNumber: '',
+              email: '',
+            ),
       driver: json['driver'] != null
           ? RideDriver.fromJson(json['driver'])
           : null,
