@@ -1,6 +1,6 @@
 // lib/features/auth/presentation/bloc/auth_state.dart
 
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 
 abstract class AuthState {}
 

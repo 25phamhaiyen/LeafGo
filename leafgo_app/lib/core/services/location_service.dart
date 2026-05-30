@@ -5,8 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-
-import 'package:leafgo_app/models/booking_models.dart';
+import 'package:leafgo_app/models/booking/location_model.dart';
 
 class LocationService {
   // =========================

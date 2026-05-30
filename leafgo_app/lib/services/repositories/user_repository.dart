@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:leafgo_app/models/auth_models.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:leafgo_app/services/datasources/user_remote_datasource.dart';
 
 import 'package:image_picker/image_picker.dart';

@@ -1,18 +1,36 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:leafgo_app/models/booking_models.dart';
-import '../../models/driver_models.dart';
+import 'package:leafgo_app/models/booking/ride_model.dart';
+import 'package:leafgo_app/models/driver/driver_stats_model.dart';
+import 'package:leafgo_app/models/driver/driver_vehicle_model.dart';
 
 abstract class DriverRemoteDataSource {
   Future<Map<String, dynamic>> toggleOnline(bool isOnline, String token);
   Future<void> updateLocation(double lat, double lng, String token);
-  Future<List<dynamic>> getPendingRides(double lat, double lng, int radius, String token);
-  Future<Map<String, dynamic>> acceptRide(String rideId, String version, String token);
-  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token);
+  Future<List<dynamic>> getPendingRides(
+    double lat,
+    double lng,
+    int radius,
+    String token,
+  );
+  Future<Map<String, dynamic>> acceptRide(
+    String rideId,
+    String version,
+    String token,
+  );
+  Future<void> updateRideStatus(
+    String rideId,
+    String status,
+    double? finalPrice,
+    String token,
+  );
   Future<RideModel?> getCurrentRide(String token);
   Future<DriverStatsModel> getStatistics(String token);
   Future<DriverVehicleModel?> getVehicle(String token);
-  Future<DriverVehicleModel> updateVehicle(Map<String, dynamic> vehicleData, String token);
+  Future<DriverVehicleModel> updateVehicle(
+    Map<String, dynamic> vehicleData,
+    String token,
+  );
 }
 
 class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
@@ -56,12 +74,17 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   }
 
   @override
-  Future<List<dynamic>> getPendingRides(double lat, double lng, int radius, String token) async {
+  Future<List<dynamic>> getPendingRides(
+    double lat,
+    double lng,
+    int radius,
+    String token,
+  ) async {
     final response = await client.get(
-      Uri.parse('$baseUrl/api/Drivers/pending-rides?latitude=$lat&longitude=$lng&radius=$radius'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse(
+        '$baseUrl/api/Drivers/pending-rides?latitude=$lat&longitude=$lng&radius=$radius',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -73,7 +96,11 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> acceptRide(String rideId, String version, String token) async {
+  Future<Map<String, dynamic>> acceptRide(
+    String rideId,
+    String version,
+    String token,
+  ) async {
     final response = await client.post(
       Uri.parse('$baseUrl/api/Drivers/accept-ride'),
       headers: {
@@ -92,7 +119,12 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   }
 
   @override
-  Future<void> updateRideStatus(String rideId, String status, double? finalPrice, String token) async {
+  Future<void> updateRideStatus(
+    String rideId,
+    String status,
+    double? finalPrice,
+    String token,
+  ) async {
     final body = <String, dynamic>{
       'rideId': rideId,
       'status': status,
@@ -116,9 +148,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   Future<RideModel?> getCurrentRide(String token) async {
     final response = await client.get(
       Uri.parse('$baseUrl/api/Drivers/current-ride'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -134,9 +164,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   Future<DriverStatsModel> getStatistics(String token) async {
     final response = await client.get(
       Uri.parse('$baseUrl/api/Drivers/statistics'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -151,9 +179,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   Future<DriverVehicleModel?> getVehicle(String token) async {
     final response = await client.get(
       Uri.parse('$baseUrl/api/Drivers/vehicle'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -166,7 +192,10 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
   }
 
   @override
-  Future<DriverVehicleModel> updateVehicle(Map<String, dynamic> vehicleData, String token) async {
+  Future<DriverVehicleModel> updateVehicle(
+    Map<String, dynamic> vehicleData,
+    String token,
+  ) async {
     final response = await client.put(
       Uri.parse('$baseUrl/api/Drivers/vehicle'),
       headers: {

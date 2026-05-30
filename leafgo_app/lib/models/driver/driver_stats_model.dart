@@ -1,68 +1,4 @@
-
-class DriverVehicleModel {
-  final String id;
-  final String vehicleTypeId;
-  final String vehicleTypeName;
-  final double basePrice;
-  final double pricePerKm;
-  final String licensePlate;
-  final String vehicleBrand;
-  final String vehicleModel;
-  final String vehicleColor;
-  final bool isActive;
-
-  DriverVehicleModel({
-    required this.id,
-    required this.vehicleTypeId,
-    required this.vehicleTypeName,
-    required this.basePrice,
-    required this.pricePerKm,
-    required this.licensePlate,
-    required this.vehicleBrand,
-    required this.vehicleModel,
-    required this.vehicleColor,
-    required this.isActive,
-  });
-
-  factory DriverVehicleModel.fromJson(Map<String, dynamic> json) {
-    final vt = json['vehicleType'] ?? {};
-    return DriverVehicleModel(
-      id: json['id'] ?? '',
-      vehicleTypeId: vt['id'] ?? '',
-      vehicleTypeName: vt['name'] ?? '',
-      basePrice: (vt['basePrice'] ?? 0).toDouble(),
-      pricePerKm: (vt['pricePerKm'] ?? 0).toDouble(),
-      licensePlate: json['licensePlate'] ?? '',
-      vehicleBrand: json['vehicleBrand'] ?? '',
-      vehicleModel: json['vehicleModel'] ?? '',
-      vehicleColor: json['vehicleColor'] ?? '',
-      isActive: json['isActive'] ?? false,
-    );
-  }
-}
-
-class DriverDailyDetail {
-  final DateTime date;
-  final double amount;
-  final int rides;
-  final bool isToday;
-
-  DriverDailyDetail({
-    required this.date,
-    required this.amount,
-    required this.rides,
-    required this.isToday,
-  });
-
-  factory DriverDailyDetail.fromJson(Map<String, dynamic> json) {
-    return DriverDailyDetail(
-      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
-      amount: (json['amount'] ?? 0).toDouble(),
-      rides: json['rides'] ?? 0,
-      isToday: json['isToday'] ?? false,
-    );
-  }
-}
+import 'package:leafgo_app/models/driver/driver_daily_detail.dart';
 
 class DriverStatsModel {
   final int totalRides;
@@ -116,7 +52,9 @@ class DriverStatsModel {
     List<DriverDailyDetail> parsedWeekDailyDetails;
     if (json['weekDailyDetails'] != null) {
       parsedWeekDailyDetails = List<DriverDailyDetail>.from(
-        (json['weekDailyDetails'] as List).map((e) => DriverDailyDetail.fromJson(e)),
+        (json['weekDailyDetails'] as List).map(
+          (e) => DriverDailyDetail.fromJson(e),
+        ),
       );
     } else {
       parsedWeekDailyDetails = _calculateWeekDailyDetails(
@@ -151,25 +89,25 @@ class DriverStatsModel {
     final todayWeekday = now.weekday; // 1 (Mon) to 7 (Sun)
     final result = List<double>.filled(7, 0.0);
     final todayIndex = todayWeekday - 1;
-    
+
     result[todayIndex] = todayEarnings;
-    
+
     final remainingEarnings = thisWeekEarnings - todayEarnings;
     if (remainingEarnings <= 0) {
       return result;
     }
-    
+
     final pastDaysCount = todayIndex;
     if (pastDaysCount <= 0) {
       result[0] = thisWeekEarnings;
       return result;
     }
-    
+
     final base = remainingEarnings / pastDaysCount;
     for (int i = 0; i < todayIndex; i++) {
       result[i] = base;
     }
-    
+
     return result;
   }
 
@@ -182,14 +120,14 @@ class DriverStatsModel {
     final now = DateTime.now();
     final result = <DriverDailyDetail>[];
     final todayWeekday = now.weekday;
-    
+
     for (int i = 0; i < 7; i++) {
       final date = now.subtract(Duration(days: i));
       final isToday = i == 0;
-      
+
       double amount = 0;
       int rides = 0;
-      
+
       if (isToday) {
         amount = todayEarnings;
         rides = todayRides;
@@ -202,15 +140,17 @@ class DriverStatsModel {
           }
         }
       }
-      
-      result.add(DriverDailyDetail(
-        date: date,
-        amount: amount,
-        rides: rides,
-        isToday: isToday,
-      ));
+
+      result.add(
+        DriverDailyDetail(
+          date: date,
+          amount: amount,
+          rides: rides,
+          isToday: isToday,
+        ),
+      );
     }
-    
+
     return result;
   }
 }

@@ -1,7 +1,7 @@
 // lib/features/admin/presentation/bloc/admin_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../models/auth_models.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
 import '../../services/repositories/admin_repository.dart';
 import 'admin_event.dart';
 import 'admin_state.dart';

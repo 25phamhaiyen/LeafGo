@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:leafgo_app/models/booking/ride_model.dart';
+import 'package:leafgo_app/models/booking/vehicle_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../models/booking_models.dart';
 
 abstract class BookingRemoteDataSource {
   Future<List<VehicleType>> getVehicleTypes(String token);

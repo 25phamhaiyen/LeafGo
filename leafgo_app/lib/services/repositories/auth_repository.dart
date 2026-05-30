@@ -6,9 +6,18 @@
 // Wraps DataSource calls; handles exceptions → Failure.
 // ─────────────────────────────────────────────────────────────
 import 'dart:io';
+import 'package:leafgo_app/models/auth/request/change_password_request.dart';
+import 'package:leafgo_app/models/auth/request/forgot_password_request.dart';
+import 'package:leafgo_app/models/auth/request/login_request.dart';
+import 'package:leafgo_app/models/auth/request/refresh_token_request.dart';
+import 'package:leafgo_app/models/auth/request/register_request.dart';
+import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
+import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
+import 'package:leafgo_app/models/auth/token/token_info_models.dart';
+import 'package:leafgo_app/models/auth/token/token_model.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:leafgo_app/services/datasources/auth_local_datasource.dart';
 import 'package:leafgo_app/services/datasources/auth_remote_datasource.dart';
-import 'package:leafgo_app/models/auth_models.dart';
 // ── Failure types ─────────────────────────────────────────────
 // lib/core/error/failures.dart  (shared across features)
 
@@ -32,9 +41,6 @@ class NetworkFailure extends Failure {
 
 // ── Repository contract ───────────────────────────────────────
 // lib/features/auth/domain/repositories/auth_repository.dart
-
-
-
 
 // Simple Result type (if you don't want dartz dependency)
 // Use dartz Either<Failure, T> in larger projects.
@@ -76,8 +82,8 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remote,
     required AuthLocalDataSource local,
-  })  : _remote = remote,
-        _local = local;
+  }) : _remote = remote,
+       _local = local;
 
   // Helper: get stored access token
   String? get _accessToken => _currentUser?.accessToken;
@@ -158,7 +164,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> revokeAllTokens() async {
     try {
       final token = _accessToken;
-      if (token == null) return Result.error(const ServerFailure('Not authenticated'));
+      if (token == null)
+        return Result.error(const ServerFailure('Not authenticated'));
       await _remote.revokeAllTokens(token);
       return Result.success(null);
     } catch (e) {
@@ -170,7 +177,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<List<TokenInfoModel>>> getActiveTokens() async {
     try {
       final token = _accessToken;
-      if (token == null) return Result.error(const ServerFailure('Not authenticated'));
+      if (token == null)
+        return Result.error(const ServerFailure('Not authenticated'));
       final tokens = await _remote.getActiveTokens(token);
       return Result.success(tokens);
     } catch (e) {
@@ -182,7 +190,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> changePassword(ChangePasswordRequest request) async {
     try {
       final token = _accessToken;
-      if (token == null) return Result.error(const ServerFailure('Not authenticated'));
+      if (token == null)
+        return Result.error(const ServerFailure('Not authenticated'));
       await _remote.changePassword(request, token);
       return Result.success(null);
     } catch (e) {
