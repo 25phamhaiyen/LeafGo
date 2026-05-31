@@ -1,4 +1,4 @@
-﻿using LeafGo.Application.Interfaces;
+using LeafGo.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -37,21 +37,38 @@ namespace LeafGo.Infrastructure.Services
             _enableSsl = bool.Parse(_configuration["Email:EnableSsl"] ?? "true");
         }
 
-        public async Task SendPasswordResetEmailAsync(string toEmail, string resetToken)
+        public async Task SendPasswordResetEmailAsync(string toEmail, string resetOtp)
         {
             try
             {
-                var resetUrl = $"{_configuration["App:FrontendUrl"]}/reset-password?token={resetToken}";
-                var subject = "Reset Your LeafGo Password";
-                var body = GetPasswordResetEmailTemplate(resetUrl);
+                var subject = "Mã xác nhận thay đổi mật khẩu LeafGo";
+                var body = GetPasswordResetEmailTemplate(resetOtp);
 
                 await SendEmailAsync(toEmail, subject, body);
 
-                _logger.LogInformation("Password reset email sent to {Email}", toEmail);
+                _logger.LogInformation("Password reset OTP email sent to {Email}", toEmail);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send password reset email to {Email}", toEmail);
+                _logger.LogError(ex, "Failed to send password reset OTP email to {Email}", toEmail);
+                throw;
+            }
+        }
+
+        public async Task SendRegistrationOtpEmailAsync(string toEmail, string otpCode)
+        {
+            try
+            {
+                var subject = "Mã xác nhận đăng ký tài khoản LeafGo";
+                var body = GetRegistrationOtpEmailTemplate(otpCode);
+
+                await SendEmailAsync(toEmail, subject, body);
+
+                _logger.LogInformation("Registration OTP email sent to {Email}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send registration OTP email to {Email}", toEmail);
                 throw;
             }
         }
@@ -214,7 +231,7 @@ namespace LeafGo.Infrastructure.Services
             </html>";
         }
 
-        private string GetPasswordResetEmailTemplate(string resetUrl)
+        private string GetPasswordResetEmailTemplate(string otpCode)
         {
             return $@"
             <!DOCTYPE html>
@@ -229,18 +246,15 @@ namespace LeafGo.Infrastructure.Services
                     <tr>
                         <td align=""center"" style=""padding: 40px 0;"">
                             <table role=""presentation"" style=""width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"">
-                                <!-- Header -->
                                 <tr>
                                     <td style=""background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;"">
                                         <h1 style=""margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;"">
-                                            🔐 Reset Your Password
+                                            🔐 Đặt lại mật khẩu
                                         </h1>
                                     </td>
                                 </tr>
-                    
-                                <!-- Content -->
                                 <tr>
-                                    <td style=""padding: 40px 30px;"">
+                                    <td style=""padding: 40px 30px; text-align: center;"">
                                         <h2 style=""margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;"">
                                             Yêu cầu đặt lại mật khẩu
                                         </h2>
@@ -248,54 +262,91 @@ namespace LeafGo.Infrastructure.Services
                                             Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản LeafGo của bạn.
                                         </p>
                                         <p style=""margin: 0 0 25px 0; color: #666666; font-size: 16px; line-height: 1.6;"">
-                                            Nhấn vào nút bên dưới để tạo mật khẩu mới:
+                                            Mã OTP của bạn là:
                                         </p>
-                            
-                                        <!-- CTA Button -->
-                                        <table role=""presentation"" style=""width: 100%; border-collapse: collapse;"">
-                                            <tr>
-                                                <td align=""center"" style=""padding: 20px 0;"">
-                                                    <a href=""{resetUrl}"" style=""display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;"">
-                                                        Đặt lại mật khẩu
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        </table>
-                            
-                                        <!-- Warning Box -->
+                                        <div style=""margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #667eea;"">
+                                            <span style=""font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px;"">{otpCode}</span>
+                                        </div>
                                         <table role=""presentation"" style=""width: 100%; border-collapse: collapse; margin-top: 25px;"">
                                             <tr>
-                                                <td style=""padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;"">
+                                                <td style=""padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; text-align: left;"">
                                                     <p style=""margin: 0; color: #856404; font-size: 14px; line-height: 1.6;"">
-                                                        ⚠️ <strong>Lưu ý:</strong> Link này chỉ có hiệu lực trong vòng 1 giờ.
+                                                        ⚠️ <strong>Lưu ý:</strong> Mã này chỉ có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.
                                                     </p>
                                                 </td>
                                             </tr>
                                         </table>
-                            
-                                        <p style=""margin: 25px 0 0 0; color: #999999; font-size: 14px; line-height: 1.6;"">
-                                            Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc 
-                                            <a href=""mailto:support@leafgo.com"" style=""color: #667eea; text-decoration: none;"">liên hệ hỗ trợ</a> 
-                                            nếu bạn có thắc mắc.
-                                        </p>
-                            
-                                        <hr style=""margin: 25px 0; border: none; border-top: 1px solid #eeeeee;"">
-                            
-                                        <p style=""margin: 0; color: #999999; font-size: 13px; line-height: 1.6;"">
-                                            Nếu nút không hoạt động, sao chép và dán URL sau vào trình duyệt của bạn:<br>
-                                            <a href=""{resetUrl}"" style=""color: #667eea; text-decoration: none; word-break: break-all;"">{resetUrl}</a>
+                                        <p style=""margin: 25px 0 0 0; color: #999999; font-size: 14px; line-height: 1.6; text-align: left;"">
+                                            Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
                                         </p>
                                     </td>
                                 </tr>
-                    
-                                <!-- Footer -->
                                 <tr>
                                     <td style=""background-color: #f8f9fa; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;"">
                                         <p style=""margin: 0 0 10px 0; color: #999999; font-size: 14px;"">
                                             © 2025 LeafGo. All rights reserved.
                                         </p>
-                                        <p style=""margin: 0; color: #999999; font-size: 12px;"">
-                                            Email này được gửi từ hệ thống tự động, vui lòng không trả lời
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>";
+        }
+
+        private string GetRegistrationOtpEmailTemplate(string otpCode)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset=""utf-8"">
+                <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                <title>Mã xác nhận đăng ký</title>
+            </head>
+            <body style=""margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;"">
+                <table role=""presentation"" style=""width: 100%; border-collapse: collapse;"">
+                    <tr>
+                        <td align=""center"" style=""padding: 40px 0;"">
+                            <table role=""presentation"" style=""width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"">
+                                <tr>
+                                    <td style=""background: linear-gradient(135deg, #10B981 0%, #047857 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;"">
+                                        <h1 style=""margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;"">
+                                            🍃 Xác nhận đăng ký LeafGo
+                                        </h1>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style=""padding: 40px 30px; text-align: center;"">
+                                        <h2 style=""margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;"">
+                                            Chào mừng bạn đến với LeafGo!
+                                        </h2>
+                                        <p style=""margin: 0 0 15px 0; color: #666666; font-size: 16px; line-height: 1.6;"">
+                                            Cảm ơn bạn đã đăng ký tài khoản. Để hoàn tất đăng ký, vui lòng sử dụng mã OTP dưới đây:
+                                        </p>
+                                        <div style=""margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #10B981;"">
+                                            <span style=""font-size: 36px; font-weight: bold; color: #10B981; letter-spacing: 8px;"">{otpCode}</span>
+                                        </div>
+                                        <table role=""presentation"" style=""width: 100%; border-collapse: collapse; margin-top: 25px;"">
+                                            <tr>
+                                                <td style=""padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; text-align: left;"">
+                                                    <p style=""margin: 0; color: #856404; font-size: 14px; line-height: 1.6;"">
+                                                        ⚠️ <strong>Lưu ý:</strong> Mã này chỉ có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <p style=""margin: 25px 0 0 0; color: #999999; font-size: 14px; line-height: 1.6; text-align: left;"">
+                                            Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email.
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style=""background-color: #f8f9fa; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;"">
+                                        <p style=""margin: 0 0 10px 0; color: #999999; font-size: 14px;"">
+                                            © 2025 LeafGo. All rights reserved.
                                         </p>
                                     </td>
                                 </tr>

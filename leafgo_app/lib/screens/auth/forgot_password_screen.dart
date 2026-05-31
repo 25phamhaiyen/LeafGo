@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
+import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -34,7 +35,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 backgroundColor: Colors.green.shade700,
               ),
             );
-            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<AuthBloc>(),
+                  child: ResetPasswordScreen(email: _emailCtrl.text.trim()),
+                ),
+              ),
+            );
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
@@ -51,7 +59,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Nhập email của bạn và chúng tôi sẽ gửi cho bạn một liên kết đặt lại.',
+                    'Nhập email của bạn và chúng tôi sẽ gửi cho bạn mã xác nhận.',
                     style: TextStyle(fontSize: 15),
                   ),
                   const SizedBox(height: 24),

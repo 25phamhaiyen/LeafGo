@@ -1,4 +1,4 @@
-﻿using LeafGo.Application.DTOs.Auth;
+using LeafGo.Application.DTOs.Auth;
 using LeafGo.Application.DTOs.Common;
 using LeafGo.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -22,17 +22,44 @@ namespace LeafGo.API.Controllers
         }
 
         /// <summary>
-        /// Register a new user account
+        /// Request an OTP to register a new user account
+        /// </summary>
+        [HttpPost("request-registration-otp")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RequestRegistrationOtp([FromBody] RegisterRequest request)
+        {
+            try
+            {
+                await _authService.RequestRegistrationOtpAsync(request);
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    null,
+                    "OTP sent to email successfully"
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ErrorResponse { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during registration OTP request");
+                return StatusCode(500, new ErrorResponse { Error = "An error occurred during OTP request" });
+            }
+        }
+
+        /// <summary>
+        /// Verify OTP and Register a new user account
         /// </summary>
         [HttpPost("register")]
         [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] VerifyRegistrationOtpRequest request)
         {
             try
             {
                 var ipAddress = GetIpAddress();
-                var response = await _authService.RegisterAsync(request, ipAddress);
+                var response = await _authService.VerifyRegistrationOtpAsync(request, ipAddress);
 
                 return StatusCode(201, ApiResponse<AuthResponse>.SuccessResponse(
                     response,
@@ -239,7 +266,7 @@ namespace LeafGo.API.Controllers
                 // Always return success to prevent email enumeration
                 return Ok(ApiResponse<object>.SuccessResponse(
                     null,
-                    "If your email exists in our system, you will receive a password reset link"
+                    "If your email exists in our system, you will receive an OTP code"
                 ));
             }
             catch (Exception ex)

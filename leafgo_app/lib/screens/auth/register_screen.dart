@@ -18,11 +18,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
 
   String _selectedRole = 'User';
   final List<String> _roles = ['User', 'Driver'];
 
   bool _obscure = true;
+  bool _isOtpSent = false;
 
   @override
   void dispose() {
@@ -36,15 +38,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<AuthBloc>().add(
-          AuthRegisterRequested(
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text,
-            fullName: _nameCtrl.text.trim(),
-            phoneNumber: _phoneCtrl.text.trim(),
-            role: _selectedRole,
-          ),
-        );
+    
+    if (!_isOtpSent) {
+      context.read<AuthBloc>().add(
+            AuthRequestRegistrationOtpRequested(
+              email: _emailCtrl.text.trim(),
+              password: _passCtrl.text,
+              fullName: _nameCtrl.text.trim(),
+              phoneNumber: _phoneCtrl.text.trim(),
+              role: _selectedRole,
+            ),
+          );
+    } else {
+      context.read<AuthBloc>().add(
+            AuthVerifyRegistrationOtpRequested(
+              email: _emailCtrl.text.trim(),
+              otpCode: _otpCtrl.text.trim(),
+            ),
+          );
+    }
   }
 
   @override
@@ -58,6 +70,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           if (state is AuthAuthenticated) {
             Navigator.of(context).pushReplacementNamed('/home');
           } else if (state is AuthFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          } else if (state is AuthOperationSuccess && state.message.contains('OTP')) {
+            setState(() => _isOtpSent = true);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
@@ -100,10 +117,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Tham gia Leaf Go ngay hôm nay!',
+                      Text(
+                        _isOtpSent ? 'Nhập mã OTP đã được gửi đến email' : 'Tham gia Leaf Go ngay hôm nay!',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white,
                         ),
@@ -242,6 +259,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (v) => v != _passCtrl.text ? 'Mật khẩu không khớp' : null,
                           ),
+                          if (_isOtpSent) ...[
+                            const SizedBox(height: 16),
+                            _field(
+                              _otpCtrl,
+                              'Mã OTP 6 số',
+                              Icons.security_outlined,
+                              type: TextInputType.number,
+                              validator: (v) => (v == null || v.trim().length != 6) ? 'Vui lòng nhập đủ 6 số OTP' : null,
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           ElevatedButton(
                             onPressed: loading ? null : _submit,
@@ -256,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             child: loading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('Tạo tài khoản', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                : Text(_isOtpSent ? 'Xác thực & Tạo tài khoản' : 'Đăng ký', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ),
                           const SizedBox(height: 24),
                           Row(

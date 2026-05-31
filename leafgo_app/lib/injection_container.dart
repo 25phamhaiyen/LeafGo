@@ -85,6 +85,7 @@ Future<void> setupDI() async {
 
   // ── Use Cases ─────────────────────────────────────────────
   sl
+    ..registerLazySingleton(() => RequestRegistrationOtpUseCase(sl()))
     ..registerLazySingleton(() => RegisterUseCase(sl()))
     ..registerLazySingleton(() => LoginUseCase(sl()))
     ..registerLazySingleton(() => LogoutUseCase(sl()))
@@ -97,6 +98,7 @@ Future<void> setupDI() async {
   // ── BLoC (factory → new instance per page) ───────────────
   sl.registerFactory(
     () => AuthBloc(
+      requestRegistrationOtp: sl(),
       register: sl(),
       login: sl(),
       logout: sl(),

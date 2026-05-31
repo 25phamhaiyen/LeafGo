@@ -5,9 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String token;
+  final String email;
 
-  const ResetPasswordScreen({super.key, required this.token});
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -15,12 +15,14 @@ class ResetPasswordScreen extends StatefulWidget {
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _otpCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscure = true;
 
   @override
   void dispose() {
+    _otpCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
@@ -55,6 +57,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TextFormField(
+                    controller: _otpCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Mã OTP 6 số',
+                      prefixIcon: Icon(Icons.security_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().length != 6) return 'Bắt buộc nhập 6 số OTP';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passCtrl,
                     obscureText: _obscure,
@@ -95,7 +111,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             if (_formKey.currentState!.validate()) {
                               context.read<AuthBloc>().add(
                                 AuthResetPasswordRequested(
-                                  token: widget.token,
+                                  email: widget.email,
+                                  token: _otpCtrl.text.trim(),
                                   newPassword: _passCtrl.text,
                                 ),
                               );

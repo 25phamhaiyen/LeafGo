@@ -27,6 +27,7 @@ namespace LeafGo.API
             // Add services to the container
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddMemoryCache();
 
             // Configure Swagger with JWT support
             builder.Services.AddSwaggerGen(options =>

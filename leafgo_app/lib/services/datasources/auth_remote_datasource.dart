@@ -15,6 +15,7 @@ import 'package:leafgo_app/models/auth/request/refresh_token_request.dart';
 import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
 import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
+import 'package:leafgo_app/models/auth/request/verify_registration_otp_request.dart';
 import 'package:leafgo_app/models/auth/response/api_error.dart';
 import 'package:leafgo_app/models/auth/token/token_info_models.dart';
 import 'package:leafgo_app/models/auth/token/token_model.dart';
@@ -34,10 +35,11 @@ class AuthException implements Exception {
 
 // ── Contract (for DI / mocking) ──────────────────────────────
 abstract class AuthRemoteDataSource {
-  Future<UserModel> register(RegisterRequest request);
+  Future<void> requestRegistrationOtp(RegisterRequest request);
+  Future<UserModel> verifyRegistrationOtp(VerifyRegistrationOtpRequest request);
   Future<UserModel> login(LoginRequest request);
   Future<TokenModel> refreshToken(RefreshTokenRequest request);
-  Future<void> revokeToken(RevokeTokenRequest request);
+  Future<void> revokeToken(RevokeTokenRequest request, String accessToken);
   Future<void> revokeAllTokens(String accessToken);
   Future<List<TokenInfoModel>> getActiveTokens(String accessToken);
   Future<void> changePassword(
@@ -93,9 +95,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   // ── Endpoints ───────────────────────────────────────────────
 
+  /// POST /api/Auth/request-registration-otp → 200 OK
+  @override
+  Future<void> requestRegistrationOtp(RegisterRequest request) async {
+    final res = await _client.post(
+      _uri('request-registration-otp'),
+      headers: _jsonHeaders,
+      body: json.encode(request.toJson()),
+    );
+    _decode(res);
+  }
+
   /// POST /api/Auth/register → 201 Created
   @override
-  Future<UserModel> register(RegisterRequest request) async {
+  Future<UserModel> verifyRegistrationOtp(VerifyRegistrationOtpRequest request) async {
     final res = await _client.post(
       _uri('register'),
       headers: _jsonHeaders,
@@ -129,12 +142,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return TokenModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
-  /// POST /api/Auth/revoke-token → 200 OK  (no auth needed per spec)
+  /// POST /api/Auth/revoke-token → 200 OK  (requires Bearer token)
   @override
-  Future<void> revokeToken(RevokeTokenRequest request) async {
+  Future<void> revokeToken(RevokeTokenRequest request, String accessToken) async {
     final res = await _client.post(
       _uri('revoke-token'),
-      headers: _jsonHeaders,
+      headers: _bearerHeaders(accessToken),
       body: json.encode(request.toJson()),
     );
     _decode(res);
