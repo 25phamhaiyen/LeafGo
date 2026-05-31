@@ -4,19 +4,29 @@ abstract class AuthEvent {}
 
 class AuthCheckCachedUser extends AuthEvent {}
 
-class AuthRegisterRequested extends AuthEvent {
+class AuthRequestRegistrationOtpRequested extends AuthEvent {
   final String email;
   final String password;
   final String fullName;
   final String phoneNumber;
   final String role; // Added role field
 
-  AuthRegisterRequested({
+  AuthRequestRegistrationOtpRequested({
     required this.email,
     required this.password,
     required this.fullName,
     required this.phoneNumber,
     required this.role,
+  });
+}
+
+class AuthVerifyRegistrationOtpRequested extends AuthEvent {
+  final String email;
+  final String otpCode;
+
+  AuthVerifyRegistrationOtpRequested({
+    required this.email,
+    required this.otpCode,
   });
 }
 
@@ -45,10 +55,11 @@ class AuthForgotPasswordRequested extends AuthEvent {
 }
 
 class AuthResetPasswordRequested extends AuthEvent {
+  final String email;
   final String token;
   final String newPassword;
 
-  AuthResetPasswordRequested({required this.token, required this.newPassword});
+  AuthResetPasswordRequested({required this.email, required this.token, required this.newPassword});
 }
 
 class AuthRefreshTokenRequested extends AuthEvent {

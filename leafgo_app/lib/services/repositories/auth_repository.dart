@@ -13,6 +13,8 @@ import 'package:leafgo_app/models/auth/request/refresh_token_request.dart';
 import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
 import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
+import 'package:leafgo_app/models/auth/request/verify_registration_otp_request.dart';
+import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
 import 'package:leafgo_app/models/auth/token/token_info_models.dart';
 import 'package:leafgo_app/models/auth/token/token_model.dart';
 import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
@@ -58,7 +60,8 @@ class Result<T> {
 }
 
 abstract class AuthRepository {
-  Future<Result<UserModel>> register(RegisterRequest request);
+  Future<Result<void>> requestRegistrationOtp(RegisterRequest request);
+  Future<Result<UserModel>> register(VerifyRegistrationOtpRequest request);
   Future<Result<UserModel>> login(LoginRequest request);
   Future<Result<UserModel?>> getCachedUser();
   Future<Result<TokenModel>> refreshToken(String refreshToken);
@@ -99,9 +102,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<UserModel>> register(RegisterRequest request) async {
+  Future<Result<void>> requestRegistrationOtp(RegisterRequest request) async {
     try {
-      final user = await _remote.register(request);
+      await _remote.requestRegistrationOtp(request);
+      return Result.success(null);
+    } catch (e) {
+      return _handleException(e);
+    }
+  }
+
+  @override
+  Future<Result<UserModel>> register(VerifyRegistrationOtpRequest request) async {
+    try {
+      final user = await _remote.verifyRegistrationOtp(request);
       await _local.saveUser(user);
       _currentUser = user;
       return Result.success(user);
@@ -153,7 +166,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> revokeToken(String refreshToken) async {
     try {
-      await _remote.revokeToken(RevokeTokenRequest(refreshToken: refreshToken));
+      final token = _accessToken;
+      if (token == null)
+        return Result.error(const ServerFailure('Not authenticated'));
+      await _remote.revokeToken(RevokeTokenRequest(refreshToken: refreshToken), token);
       return Result.success(null);
     } catch (e) {
       return _handleException(e);
@@ -226,7 +242,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = await _local.getCachedUser();
       if (user != null) {
         await _remote
-            .revokeToken(RevokeTokenRequest(refreshToken: user.refreshToken))
+            .revokeToken(RevokeTokenRequest(refreshToken: user.refreshToken), user.accessToken)
             .catchError((_) {}); // Silent fail — clear local anyway
       }
       await _local.clearUser();

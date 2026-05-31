@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,6 +9,10 @@ namespace LeafGo.Application.DTOs.Auth
 {
     public class ResetPasswordRequest
     {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Token is required")]
         public string Token { get; set; } = string.Empty;
 

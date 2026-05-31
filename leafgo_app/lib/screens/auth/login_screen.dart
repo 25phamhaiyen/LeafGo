@@ -43,7 +43,11 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            Navigator.of(context).pushReplacementNamed('/home');
+            if (state.user.role == 'Admin') {
+              Navigator.of(context).pushReplacementNamed('/admin-dashboard');
+            } else {
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

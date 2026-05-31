@@ -1,8 +1,9 @@
-﻿using LeafGo.Application.DTOs.Auth;
+using LeafGo.Application.DTOs.Auth;
 using LeafGo.Application.Interfaces;
 using LeafGo.Domain.Constants;
 using LeafGo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace LeafGo.Infrastructure.Services
 {
@@ -12,20 +13,23 @@ namespace LeafGo.Infrastructure.Services
         private readonly IJwtService _jwtService;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
+        private readonly IMemoryCache _cache;
 
         public AuthService(
             LeafGoDbContext context,
             IJwtService jwtService,
             IPasswordHasher passwordHasher,
-            IEmailService emailService)
+            IEmailService emailService,
+            IMemoryCache cache)
         {
             _context = context;
             _jwtService = jwtService;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
+            _cache = cache;
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, string? ipAddress)
+        public async Task RequestRegistrationOtpAsync(RegisterRequest request)
         {
             // Check if email already exists
             var existingUser = await _context.Set<User>()
@@ -42,15 +46,42 @@ namespace LeafGo.Infrastructure.Services
                 throw new InvalidOperationException("Invalid role. Must be User or Driver");
             }
 
+            // Generate 6-digit OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // Cache the request and OTP for 5 minutes
+            var cacheKey = $"Reg_{request.Email}";
+            _cache.Set(cacheKey, new { Request = request, Otp = otp }, TimeSpan.FromMinutes(5));
+
+            // Send OTP email
+            await _emailService.SendRegistrationOtpEmailAsync(request.Email, otp);
+        }
+
+        public async Task<AuthResponse> VerifyRegistrationOtpAsync(VerifyRegistrationOtpRequest request, string? ipAddress)
+        {
+            var cacheKey = $"Reg_{request.Email}";
+            if (!_cache.TryGetValue(cacheKey, out dynamic? cachedData) || cachedData == null)
+            {
+                throw new InvalidOperationException("OTP has expired or was not requested");
+            }
+
+            string cachedOtp = cachedData.Otp;
+            RegisterRequest regRequest = cachedData.Request;
+
+            if (cachedOtp != request.OtpCode)
+            {
+                throw new InvalidOperationException("Invalid OTP code");
+            }
+
             // Create new user
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Email = request.Email,
-                PasswordHash = _passwordHasher.HashPassword(request.Password),
-                FullName = request.FullName,
-                PhoneNumber = request.PhoneNumber,
-                Role = request.Role,
+                Email = regRequest.Email,
+                PasswordHash = _passwordHasher.HashPassword(regRequest.Password),
+                FullName = regRequest.FullName,
+                PhoneNumber = regRequest.PhoneNumber,
+                Role = regRequest.Role,
                 IsActive = true,
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
@@ -59,6 +90,9 @@ namespace LeafGo.Infrastructure.Services
 
             _context.Set<User>().Add(user);
             await _context.SaveChangesAsync();
+
+            // Clear cache
+            _cache.Remove(cacheKey);
 
             // Generate tokens
             var accessToken = _jwtService.GenerateAccessToken(user);
@@ -251,40 +285,33 @@ namespace LeafGo.Infrastructure.Services
                 return;
             }
 
-            // Generate reset token (simple GUID for now, could use more secure method)
-            var resetToken = Guid.NewGuid().ToString("N");
-            user.ResetPasswordToken = _passwordHasher.HashPassword(resetToken); // Hash the token
-            user.ResetPasswordExpiry = DateTime.UtcNow.AddHours(1); // 1 hour expiry
+            // Generate 6-digit reset OTP
+            var resetOtp = new Random().Next(100000, 999999).ToString();
+            user.ResetPasswordToken = _passwordHasher.HashPassword(resetOtp); // Hash the OTP
+            user.ResetPasswordExpiry = DateTime.UtcNow.AddMinutes(5); // 5 minutes expiry
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            // Send reset email
-            await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
+            // Send reset OTP email
+            await _emailService.SendPasswordResetEmailAsync(user.Email, resetOtp);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request)
         {
-            // Find user with valid reset token
-            var users = await _context.Set<User>()
-                .Where(u => !u.IsDeleted
-                    && u.ResetPasswordToken != null
-                    && u.ResetPasswordExpiry > DateTime.UtcNow)
-                .ToListAsync();
+            // Find user by email
+            var user = await _context.Set<User>()
+                .FirstOrDefaultAsync(u => u.Email == request.Email && !u.IsDeleted);
 
-            User? user = null;
-            foreach (var u in users)
-            {
-                if (_passwordHasher.VerifyPassword(request.Token, u.ResetPasswordToken!))
-                {
-                    user = u;
-                    break;
-                }
-            }
-
-            if (user == null)
+            if (user == null || user.ResetPasswordToken == null || user.ResetPasswordExpiry < DateTime.UtcNow)
             {
                 throw new InvalidOperationException("Invalid or expired reset token");
+            }
+
+            // Verify OTP
+            if (!_passwordHasher.VerifyPassword(request.Token, user.ResetPasswordToken))
+            {
+                throw new InvalidOperationException("Invalid OTP code");
             }
 
             // Update password and clear reset token

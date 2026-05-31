@@ -1,10 +1,11 @@
-﻿using LeafGo.Application.DTOs.Auth;
+using LeafGo.Application.DTOs.Auth;
 
 namespace LeafGo.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<AuthResponse> RegisterAsync(RegisterRequest request, string? ipAddress);
+        Task RequestRegistrationOtpAsync(RegisterRequest request);
+        Task<AuthResponse> VerifyRegistrationOtpAsync(VerifyRegistrationOtpRequest request, string? ipAddress);
         Task<AuthResponse> LoginAsync(LoginRequest request, string? ipAddress);
         Task<RefreshTokenResponse> RefreshTokenAsync(string token, string? ipAddress);
         Task RevokeTokenAsync(string token, string? ipAddress);

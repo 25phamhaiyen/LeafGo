@@ -9,6 +9,7 @@ export 'auth_event.dart';
 export 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  final RequestRegistrationOtpUseCase _requestRegistrationOtp;
   final RegisterUseCase _register;
   final LoginUseCase _login;
   final LogoutUseCase _logout;
@@ -19,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ResetPasswordUseCase _resetPassword;
 
   AuthBloc({
+    required RequestRegistrationOtpUseCase requestRegistrationOtp,
     required RegisterUseCase register,
     required LoginUseCase login,
     required LogoutUseCase logout,
@@ -27,7 +29,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required ChangePasswordUseCase changePassword,
     required ForgotPasswordUseCase forgotPassword,
     required ResetPasswordUseCase resetPassword,
-  }) : _register = register,
+  }) : _requestRegistrationOtp = requestRegistrationOtp,
+       _register = register,
        _login = login,
        _logout = logout,
        _getCachedUser = getCachedUser,
@@ -37,7 +40,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _resetPassword = resetPassword,
        super(AuthInitial()) {
     on<AuthCheckCachedUser>(_onCheckCachedUser);
-    on<AuthRegisterRequested>(_onRegister);
+    on<AuthRequestRegistrationOtpRequested>(_onRequestRegistrationOtp);
+    on<AuthVerifyRegistrationOtpRequested>(_onVerifyRegistrationOtp);
     on<AuthLoginRequested>(_onLogin);
     on<AuthLogoutRequested>(_onLogout);
     on<AuthChangePasswordRequested>(_onChangePassword);
@@ -78,17 +82,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onRegister(
-    AuthRegisterRequested event,
+  Future<void> _onRequestRegistrationOtp(
+    AuthRequestRegistrationOtpRequested event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final result = await _register(
+    final result = await _requestRegistrationOtp(
       email: event.email,
       password: event.password,
       fullName: event.fullName,
       phoneNumber: event.phoneNumber,
       role: event.role, // Passed role from event
+    );
+    if (result.isSuccess) {
+      emit(AuthOperationSuccess('OTP sent to email. Please verify.'));
+    } else {
+      emit(AuthFailure(result.failure!.message));
+    }
+  }
+
+  Future<void> _onVerifyRegistrationOtp(
+    AuthVerifyRegistrationOtpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    final result = await _register(
+      email: event.email,
+      otpCode: event.otpCode,
     );
     if (result.isSuccess) {
       emit(AuthAuthenticated(result.data!));
@@ -154,6 +174,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     final result = await _resetPassword(
+      email: event.email,
       token: event.token,
       newPassword: event.newPassword,
     );

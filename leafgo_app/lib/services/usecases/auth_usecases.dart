@@ -11,10 +11,34 @@ import 'package:leafgo_app/models/auth/request/change_password_request.dart';
 import 'package:leafgo_app/models/auth/request/login_request.dart';
 import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
+import 'package:leafgo_app/models/auth/request/verify_registration_otp_request.dart';
 import 'package:leafgo_app/models/auth/token/token_info_models.dart';
 import 'package:leafgo_app/models/auth/token/token_model.dart';
 import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'package:leafgo_app/services/repositories/auth_repository.dart';
+
+class RequestRegistrationOtpUseCase {
+  final AuthRepository _repo;
+  RequestRegistrationOtpUseCase(this._repo);
+
+  Future<Result<void>> call({
+    required String email,
+    required String password,
+    required String fullName,
+    required String phoneNumber,
+    String role = 'User',
+  }) {
+    return _repo.requestRegistrationOtp(
+      RegisterRequest(
+        email: email,
+        password: password,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        role: role,
+      ),
+    );
+  }
+}
 
 class RegisterUseCase {
   final AuthRepository _repo;
@@ -22,18 +46,12 @@ class RegisterUseCase {
 
   Future<Result<UserModel>> call({
     required String email,
-    required String password,
-    required String fullName,
-    required String phoneNumber,
-    String role = 'User',
+    required String otpCode,
   }) {
     return _repo.register(
-      RegisterRequest(
+      VerifyRegistrationOtpRequest(
         email: email,
-        password: password,
-        fullName: fullName,
-        phoneNumber: phoneNumber,
-        role: role,
+        otpCode: otpCode,
       ),
     );
   }
@@ -126,11 +144,12 @@ class ResetPasswordUseCase {
   ResetPasswordUseCase(this._repo);
 
   Future<Result<void>> call({
+    required String email,
     required String token,
     required String newPassword,
   }) {
     return _repo.resetPassword(
-      ResetPasswordRequest(token: token, newPassword: newPassword),
+      ResetPasswordRequest(email: email, token: token, newPassword: newPassword),
     );
   }
 }
