@@ -152,6 +152,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   String? _token;
   int _pickupLocationVersion = 0;
   int _dropoffLocationVersion = 0;
+  Timer? _pendingPollTimer;
 
   BookingBloc({
     required this.repository,
@@ -441,8 +442,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         'estimatedPrice': state.priceData!['estimatedPrice'],
       };
       final ride = await repository.createRide(rideData, _token!);
-      emit(state.copyWith(currentRide: ride));
+      // Join SignalR group BEFORE emitting state to avoid missing RideAccepted event
       await signalRService.joinRideGroup(ride.id);
+      emit(state.copyWith(currentRide: ride));
+      // Start polling as fallback in case SignalR event is missed
+      _startPendingPollTimer();
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoading: false));
     } finally {
@@ -495,6 +499,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       final ride = await repository.getActiveRide(_token!);
 
       if (ride != null) {
+        // Stop polling if ride is no longer Pending (driver accepted)
+        if (ride.status != 'Pending') {
+          _stopPendingPollTimer();
+        }
+
         emit(
           state.copyWith(
             currentRide: _mergeRideDetails(ride),
@@ -504,6 +513,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
         await signalRService.joinRideGroup(ride.id);
       } else {
+        _stopPendingPollTimer();
         emit(
           state.copyWith(
             currentRide: null,
@@ -521,6 +531,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
   void _onRideAccepted(BookingRideAccepted event, Emitter<BookingState> emit) {
     if (state.currentRide == null) return;
+    _stopPendingPollTimer();
 
     final driverJson = event.data['driver'] ?? event.data['Driver'];
     final driver = driverJson is Map
@@ -659,6 +670,31 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
   bool _isValidLatLng(double lat, double lng) {
     return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  }
+
+  /// Start a periodic timer to poll active ride status as a fallback
+  /// when SignalR might miss the RideAccepted event.
+  void _startPendingPollTimer() {
+    _stopPendingPollTimer();
+    _pendingPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      // Only poll if we have a ride that is still Pending
+      if (state.currentRide != null && state.currentRide!.status == 'Pending') {
+        add(BookingCheckActiveRide());
+      } else {
+        _stopPendingPollTimer();
+      }
+    });
+  }
+
+  void _stopPendingPollTimer() {
+    _pendingPollTimer?.cancel();
+    _pendingPollTimer = null;
+  }
+
+  @override
+  Future<void> close() {
+    _stopPendingPollTimer();
+    return super.close();
   }
 
   EventTransformer<Event> _debounce<Event>(Duration duration) {
