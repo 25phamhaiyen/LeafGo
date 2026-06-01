@@ -10,6 +10,7 @@ import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
+import '../../core/utils/avatar_utils.dart';
 import '../../injection_container.dart';
 import '../../blocs/driver/driver_bloc.dart';
 
@@ -619,141 +620,149 @@ class _IdlePanel extends StatelessWidget {
       decimalDigits: 0,
     ).format(todayEarnings);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 18,
-        right: 18,
-        top: 10,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Online toggle row
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.isOnline
-                          ? 'Bạn đang Trực Tuyến'
-                          : 'Bạn đang Ngoại Tuyến',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      state.isOnline
-                          ? 'Sẵn sàng nhận chuyến...'
-                          : 'Bật trực tuyến để nhận chuyến xe',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
+    return RefreshIndicator(
+      color: _green,
+      onRefresh: () async {
+        context.read<DriverBloc>().add(DriverCheckActiveRide());
+        context.read<DriverBloc>().add(DriverLoadProfile());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(
+          left: 18,
+          right: 18,
+          top: 10,
+          bottom: MediaQuery.of(context).padding.bottom + 12,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Switch(
-                value: state.isOnline,
-                activeColor: _green,
-                onChanged: (_) => onToggleOnline(),
-              ),
-            ],
-          ),
-
-          // Stats row (always visible)
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _StatChip(label: 'Hôm nay', value: '$todayRides chuyến'),
-              const SizedBox(width: 8),
-              _StatChip(
-                label: 'Đánh giá',
-                value: '${averageRating.toStringAsFixed(1)} ★',
-              ),
-              const SizedBox(width: 8),
-              _StatChip(label: 'Doanh thu', value: formattedEarnings),
-            ],
-          ),
-
-          // Pending rides
-          if (state.isOnline) ...[
+            ),
             const SizedBox(height: 16),
+
+            // Online toggle row
             Row(
-              children: const [
-                Text(
-                  'YÊU CẦU GẦN ĐÂY',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF94A3B8),
-                    letterSpacing: 0.8,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.isOnline
+                            ? 'Bạn đang Trực Tuyến'
+                            : 'Bạn đang Ngoại Tuyến',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        state.isOnline
+                            ? 'Sẵn sàng nhận chuyến...'
+                            : 'Bật trực tuyến để nhận chuyến xe',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Switch(
+                  value: state.isOnline,
+                  activeColor: _green,
+                  onChanged: (_) => onToggleOnline(),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            if (pendingRides.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: _green.withOpacity(0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Đang tìm chuyến xung quanh bạn...',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
-                  ],
+
+            // Stats row (always visible)
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _StatChip(label: 'Hôm nay', value: '$todayRides chuyến'),
+                const SizedBox(width: 8),
+                _StatChip(
+                  label: 'Đánh giá',
+                  value: '${averageRating.toStringAsFixed(1)} ★',
                 ),
-              )
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 220),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  itemCount: pendingRides.length,
-                  itemBuilder: (ctx, i) {
-                    final item = pendingRides[i];
-                    return _PendingRideCard(
-                      data: item,
-                      isLoading: state.isLoading,
-                      onAccept: () =>
-                          onAccept(item['id'], item['version'] ?? ''),
-                      onDismiss: () => onDismiss(item['id']),
-                    );
-                  },
-                ),
+                const SizedBox(width: 8),
+                _StatChip(label: 'Doanh thu', value: formattedEarnings),
+              ],
+            ),
+
+            // Pending rides
+            if (state.isOnline) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: const [
+                  Text(
+                    'YÊU CẦU GẦN ĐÂY',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
+              if (pendingRides.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _green.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Đang tìm chuyến xung quanh bạn...',
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const ClampingScrollPhysics(),
+                    itemCount: pendingRides.length,
+                    itemBuilder: (ctx, i) {
+                      final item = pendingRides[i];
+                      return _PendingRideCard(
+                        data: item,
+                        isLoading: state.isLoading,
+                        onAccept: () =>
+                            onAccept(item['id'], item['version'] ?? ''),
+                        onDismiss: () => onDismiss(item['id']),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -873,7 +882,13 @@ class _PendingRideCardState extends State<_PendingRideCard> {
                   // Header: avatar + name + price
                   Row(
                     children: [
-                      _Avatar(initials: initials),
+                      buildAvatarCircle(
+                        data['user']?['avatar']?.toString() ??
+                            data['user']?['avatarUrl']?.toString(),
+                        radius: 36,
+                        backgroundColor: _green,
+                        placeholderIconColor: Colors.white,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -1164,306 +1179,318 @@ class _ActiveRidePanel extends StatelessWidget {
       decimalDigits: 0,
     ).format(ride.estimatedPrice);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 18,
-        right: 18,
-        top: 10,
-        bottom: MediaQuery.of(context).padding.bottom + 14,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(2),
+    return RefreshIndicator(
+      color: _green,
+      onRefresh: () async {
+        context.read<DriverBloc>().add(DriverCheckActiveRide());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(
+          left: 18,
+          right: 18,
+          top: 10,
+          bottom: MediaQuery.of(context).padding.bottom + 14,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
+            const SizedBox(height: 14),
 
-          // Status progress bar
-          _StatusProgressBar(status: ride.status),
-          const SizedBox(height: 14),
+            // Status progress bar
+            _StatusProgressBar(status: ride.status),
+            const SizedBox(height: 14),
 
-          // Status desc
-          Text(
-            desc,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: Color(0xFF0F172A),
+            // Status desc
+            Text(
+              desc,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Color(0xFF0F172A),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // User card
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _border, width: 0.5),
-            ),
-            child: Row(
-              children: [
-                _Avatar(initials: initials, size: 44, fontSize: 16),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        clientName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 13,
-                            color: Color(0xFFF59E0B),
+            // User card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _border, width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  buildAvatarCircle(
+                    ride.user?.avatar,
+                    radius: 44,
+                    backgroundColor: _surface,
+                    placeholderIconColor: _green,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          clientName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F172A),
                           ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${rating.toStringAsFixed(1)} • $totalRides chuyến',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 13,
+                              color: Color(0xFFF59E0B),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${rating.toStringAsFixed(1)} • $totalRides chuyến',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Phone button
+                  _ActionButton(
+                    icon: Icons.phone_rounded,
+                    color: _green,
+                    bgColor: const Color(0xFFECFDF5),
+                    borderColor: const Color(0xFFBBF7D0),
+                    onTap: () {
+                      final phone = ride.user?.phoneNumber;
+                      if (phone != null && phone.isNotEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Gọi cho khách hàng: $phone'),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        );
+                      }
+                    },
                   ),
-                ),
-                // Phone button
-                _ActionButton(
-                  icon: Icons.phone_rounded,
-                  color: _green,
-                  bgColor: const Color(0xFFECFDF5),
-                  borderColor: const Color(0xFFBBF7D0),
-                  onTap: () {
-                    final phone = ride.user?.phoneNumber;
-                    if (phone != null && phone.isNotEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Gọi cho khách hàng: $phone'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 6),
+                  // Message button
+                  _ActionButton(
+                    icon: Icons.chat_bubble_rounded,
+                    color: const Color(0xFF3B82F6),
+                    bgColor: const Color(0xFFEFF6FF),
+                    borderColor: const Color(0xFFBFDBFE),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            rideId: ride.id,
+                            currentUserId: ride.driver?.id ?? 'driver',
+                            recipientName: ride.user?.fullName ?? 'Khách hàng',
                           ),
                         ),
                       );
-                    }
-                  },
-                ),
-                const SizedBox(width: 6),
-                // Message button
-                _ActionButton(
-                  icon: Icons.chat_bubble_rounded,
-                  color: const Color(0xFF3B82F6),
-                  bgColor: const Color(0xFFEFF6FF),
-                  borderColor: const Color(0xFFBFDBFE),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(
-                          rideId: ride.id,
-                          currentUserId: ride.driver?.id ?? 'driver',
-                          recipientName: ride.user?.fullName ?? 'Khách hàng',
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Route card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _border, width: 0.5),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDBEAFE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.location_on_rounded,
+                          size: 16,
+                          color: Color(0xFF2563EB),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Route card
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _border, width: 0.5),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.location_on_rounded,
-                        size: 16,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Điểm đón',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: Color(0xFF94A3B8),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Điểm đón',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            ride.pickupAddress,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
+                            const SizedBox(height: 2),
+                            Text(
+                              ride.pickupAddress,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 14),
-                  child: Column(
-                    children: List.generate(
-                      3,
-                      (_) => Container(
-                        width: 2,
-                        height: 4,
-                        margin: const EdgeInsets.symmetric(vertical: 1),
-                        color: const Color(0xFFCBD5E1),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 14),
+                    child: Column(
+                      children: List.generate(
+                        3,
+                        (_) => Container(
+                          width: 2,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 1),
+                          color: const Color(0xFFCBD5E1),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.flag_rounded,
+                          size: 16,
+                          color: Color(0xFFDC2626),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.flag_rounded,
-                        size: 16,
-                        color: Color(0xFFDC2626),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Điểm đến',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: Color(0xFF94A3B8),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Điểm đến',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            ride.destinationAddress,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
+                            const SizedBox(height: 2),
+                            Text(
+                              ride.destinationAddress,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Divider(height: 16, color: _border),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Tiền chuyến đi',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                    ),
-                    Text(
-                      formattedPrice,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _greenDark,
+                    ],
+                  ),
+                  Divider(height: 16, color: _border),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tiền chuyến đi',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // CTA button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: isLoading
-                  ? null
-                  : () => onUpdateStatus(
-                      nextStatus,
-                      nextStatus == 'Completed' ? ride.estimatedPrice : null,
-                    ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                      Text(
+                        formattedPrice,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _greenDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      actionText,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            // CTA button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () => onUpdateStatus(
+                        nextStatus,
+                        nextStatus == 'Completed' ? ride.estimatedPrice : null,
+                      ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _green,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        actionText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

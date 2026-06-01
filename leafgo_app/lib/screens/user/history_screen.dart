@@ -19,6 +19,11 @@ class _HistoryScreenState extends State<HistoryScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
+  int _currentPage = 1;
+  final int _pageSize = 10;
+  DateTime? _fromDate;
+  DateTime? _toDate;
+
   static const Color _primary = Color(0xFF10B981);
   static const Color _primaryDark = Color(0xFF059669);
   static const Color _primaryLight = Color(0xFFD1FAE5);
@@ -37,7 +42,9 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _animController.forward();
-    context.read<UserBloc>().add(UserFetchHistory());
+    context.read<UserBloc>().add(
+      UserFetchHistory(page: _currentPage, pageSize: _pageSize),
+    );
   }
 
   @override
@@ -96,6 +103,89 @@ class _HistoryScreenState extends State<HistoryScreen>
   String _formatCurrency(num amount) {
     final f = NumberFormat('#,###', 'vi_VN');
     return '${f.format(amount)}đ';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Chọn ngày';
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  Future<void> _pickDateRange(BuildContext context, bool isFrom) async {
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime.now();
+    final initialDate = isFrom
+        ? _fromDate ?? _toDate ?? DateTime.now()
+        : _toDate ?? _fromDate ?? DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      if (isFrom) {
+        _fromDate = picked;
+        if (_toDate != null && _toDate!.isBefore(picked)) {
+          _toDate = picked;
+        }
+      } else {
+        _toDate = picked;
+        if (_fromDate != null && _fromDate!.isAfter(picked)) {
+          _fromDate = picked;
+        }
+      }
+    });
+  }
+
+  void _clearDateFilters() {
+    setState(() {
+      _fromDate = null;
+      _toDate = null;
+      _currentPage = 1;
+    });
+    context.read<UserBloc>().add(
+      UserFetchHistory(
+        page: 1,
+        pageSize: _pageSize,
+        fromDate: null,
+        toDate: null,
+        refreshSummary: true,
+      ),
+    );
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _currentPage = 1;
+    });
+    context.read<UserBloc>().add(
+      UserFetchHistory(
+        page: _currentPage,
+        pageSize: _pageSize,
+        fromDate: _fromDate,
+        toDate: _toDate,
+        refreshSummary: true,
+      ),
+    );
+  }
+
+  void _changePage(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    context.read<UserBloc>().add(
+      UserFetchHistory(
+        page: page,
+        pageSize: _pageSize,
+        fromDate: _fromDate,
+        toDate: _toDate,
+        refreshSummary: false,
+      ),
+    );
   }
 
   // ─── Stats ───────────────────────────────────────────────────────────────────
@@ -311,7 +401,12 @@ class _HistoryScreenState extends State<HistoryScreen>
                                         ),
                                       );
                                       context.read<UserBloc>().add(
-                                        UserFetchHistory(),
+                                        UserFetchHistory(
+                                          page: _currentPage,
+                                          pageSize: _pageSize,
+                                          fromDate: _fromDate,
+                                          toDate: _toDate,
+                                        ),
                                       );
                                     } catch (e) {
                                       setDialogState(() => isSending = false);
@@ -393,10 +488,180 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  Widget _buildFilterBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Lọc lịch sử',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: _textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _pickDateRange(context, true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _divider),
+                    ),
+                    child: Text(
+                      'Từ: ${_formatDate(_fromDate)}',
+                      style: TextStyle(
+                        color: _fromDate == null
+                            ? _textSecondary
+                            : _textPrimary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _pickDateRange(context, false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _divider),
+                    ),
+                    child: Text(
+                      'Đến: ${_formatDate(_toDate)}',
+                      style: TextStyle(
+                        color: _toDate == null ? _textSecondary : _textPrimary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _applyFilters,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Áp dụng'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: _clearDateFilters,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey.shade300),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Xóa'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls(Map<String, dynamic>? historyData) {
+    final currentPage = historyData?['page'] as int? ?? _currentPage;
+    final totalPages = historyData?['totalPages'] as int? ?? 1;
+    final hasPrev = currentPage > 1;
+    final hasNext = currentPage < totalPages;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: hasPrev ? () => _changePage(currentPage - 1) : null,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: hasPrev ? _textPrimary : _textSecondary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Trang trước'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              'Trang $currentPage/$totalPages',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: hasNext ? () => _changePage(currentPage + 1) : null,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: hasNext ? _textPrimary : _textSecondary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Trang sau'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── Stats Header ────────────────────────────────────────────────────────────
 
-  Widget _buildStatsHeader(List items) {
-    final stats = _computeStats(items);
+  Widget _buildStatsHeader(Map<String, dynamic> stats) {
     final completed = stats['completed'] as int;
     final totalSpent = stats['totalSpent'] as double;
     final avgRating = stats['avgRating'] as double;
@@ -620,7 +885,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                         backgroundImage:
                             ride['driver']?['avatar'] != null &&
                                 ride['driver']['avatar'].toString().isNotEmpty
-                            ? NetworkImage(normalizeAvatarUrl(ride['driver']['avatar']) ?? '')
+                            ? NetworkImage(
+                                normalizeAvatarUrl(ride['driver']['avatar']) ??
+                                    '',
+                              )
                             : null,
                         child:
                             ride['driver']?['avatar'] == null ||
@@ -832,8 +1100,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () =>
-                        context.read<UserBloc>().add(UserFetchHistory()),
+                    onPressed: () => context.read<UserBloc>().add(
+                      UserFetchHistory(
+                        page: _currentPage,
+                        pageSize: _pageSize,
+                        fromDate: _fromDate,
+                        toDate: _toDate,
+                        refreshSummary: false,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _primary,
                       foregroundColor: Colors.white,
@@ -849,6 +1124,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           }
 
           final items = state.historyData?['items'] as List? ?? [];
+          final stats = state.historyStats ?? _computeStats(items);
 
           if (items.isEmpty) {
             return Center(
@@ -889,11 +1165,11 @@ class _HistoryScreenState extends State<HistoryScreen>
 
           return RefreshIndicator(
             color: _primary,
-            onRefresh: () async =>
-                context.read<UserBloc>().add(UserFetchHistory()),
+            onRefresh: () async => _changePage(_currentPage),
             child: CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(child: _buildStatsHeader(items)),
+                SliverToBoxAdapter(child: _buildFilterBar()),
+                SliverToBoxAdapter(child: _buildStatsHeader(stats)),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   sliver: SliverList(
@@ -901,6 +1177,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                       (_, i) => _buildRideCard(items[i], i),
                       childCount: items.length,
                     ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: _buildPaginationControls(state.historyData),
                   ),
                 ),
               ],
@@ -1233,7 +1518,10 @@ class _DetailSheet extends StatelessWidget {
                                 backgroundImage:
                                     driver['avatar'] != null &&
                                         driver['avatar'].toString().isNotEmpty
-                                    ? NetworkImage(normalizeAvatarUrl(driver['avatar']) ?? '')
+                                    ? NetworkImage(
+                                        normalizeAvatarUrl(driver['avatar']) ??
+                                            '',
+                                      )
                                     : null,
                                 child:
                                     driver['avatar'] == null ||

@@ -256,8 +256,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildMobileBookingFormPanel(BookingState state, Color primaryColor) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 16),
+    return RefreshIndicator(
+      color: const Color(0xFF10B981),
+      onRefresh: () async {
+        context.read<BookingBloc>().add(BookingLoadVehicleTypes());
+        context.read<BookingBloc>().add(BookingCheckActiveRide());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,6 +619,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -620,249 +628,261 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     if (ride.status == 'Completed') {
       return _ActiveRideRatingPanel(ride: ride, primaryColor: primaryColor);
     }
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      color: primaryColor,
+      onRefresh: () async {
+        context.read<BookingBloc>().add(BookingCheckActiveRide());
+      },
+      child: ListView(
+        shrinkWrap: true,
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Hành trình hiện tại',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Status Box
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F7F0),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: primaryColor.withOpacity(0.2)),
-            ),
-            child: Row(
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ride.status == 'Completed'
-                    ? const Icon(
-                        Icons.check_circle,
-                        color: Color(0xFF10B981),
-                        size: 20,
-                      )
-                    : ride.status == 'Cancelled'
-                    ? const Icon(Icons.cancel, color: Colors.red, size: 20)
-                    : const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF10B981),
-                        ),
-                      ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getStatusText(ride.status),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: primaryColor,
-                        ),
-                      ),
-                      Text(
-                        ride.driver == null
-                            ? 'Đang tìm tài xế gần bạn...'
-                            : 'Tài xế đang đến điểm đón',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          _buildSummaryRow('Điểm đón', ride.pickupAddress, isBold: false),
-          const SizedBox(height: 6),
-          _buildSummaryRow('Điểm đến', ride.destinationAddress, isBold: false),
-          const SizedBox(height: 6),
-          _buildSummaryRow(
-            'Số tiền',
-            NumberFormat.simpleCurrency(
-              locale: 'vi_VN',
-              decimalDigits: 0,
-            ).format(ride.estimatedPrice),
-            isBold: true,
-            valueColor: primaryColor,
-          ),
-
-          if (ride.driver != null) ...[
-            const Divider(height: 24),
-            Row(
-              children: [
-                buildAvatarCircle(ride.driver!.avatar, radius: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ride.driver!.fullName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.phone,
-                            size: 12,
-                            color: Colors.black54,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              ride.driver!.phoneNumber,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.confirmation_number_outlined,
-                            size: 12,
-                            color: Colors.blue,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              ride.driver!.vehicle?.licensePlate ?? 'N/A',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                const SizedBox(height: 12),
+                const Text(
+                  'Hành trình hiện tại',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Status Box
                 Container(
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F7F0),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: primaryColor.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.chat,
-                          color: Color(0xFF10B981),
-                          size: 16,
+                      ride.status == 'Completed'
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF10B981),
+                              size: 20,
+                            )
+                          : ride.status == 'Cancelled'
+                          ? const Icon(Icons.cancel, color: Colors.red, size: 20)
+                          : const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _getStatusText(ride.status),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: primaryColor,
+                              ),
+                            ),
+                            Text(
+                              ride.driver == null
+                                  ? 'Đang tìm tài xế gần bạn...'
+                                  : 'Tài xế đang đến điểm đón',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
                         ),
-                        onPressed: () => _openRideChat(ride),
-                        constraints: const BoxConstraints.tightFor(
-                          width: 32,
-                          height: 32,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.phone,
-                          color: Color(0xFF10B981),
-                          size: 16,
-                        ),
-                        onPressed: () {},
-                        constraints: const BoxConstraints.tightFor(
-                          width: 32,
-                          height: 32,
-                        ),
-                        padding: EdgeInsets.zero,
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                _buildSummaryRow('Điểm đón', ride.pickupAddress, isBold: false),
+                const SizedBox(height: 6),
+                _buildSummaryRow('Điểm đến', ride.destinationAddress, isBold: false),
+                const SizedBox(height: 6),
+                _buildSummaryRow(
+                  'Số tiền',
+                  NumberFormat.simpleCurrency(
+                    locale: 'vi_VN',
+                    decimalDigits: 0,
+                  ).format(ride.estimatedPrice),
+                  isBold: true,
+                  valueColor: primaryColor,
+                ),
+
+                if (ride.driver != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      buildAvatarCircle(ride.driver!.avatar, radius: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ride.driver!.fullName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.phone,
+                                  size: 12,
+                                  color: Colors.black54,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    ride.driver!.phoneNumber,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.confirmation_number_outlined,
+                                  size: 12,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    ride.driver!.vehicle?.licensePlate ?? 'N/A',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE6F7F0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.chat,
+                                color: Color(0xFF10B981),
+                                size: 16,
+                              ),
+                              onPressed: () => _openRideChat(ride),
+                              constraints: const BoxConstraints.tightFor(
+                                width: 32,
+                                height: 32,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.phone,
+                                color: Color(0xFF10B981),
+                                size: 16,
+                              ),
+                              onPressed: () {},
+                              constraints: const BoxConstraints.tightFor(
+                                width: 32,
+                                height: 32,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openRideChat(ride),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      label: const Text(
+                        'Nhắn tin với tài xế',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(42),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                if (ride.status == 'Pending')
+                  OutlinedButton(
+                    onPressed: () => context.read<BookingBloc>().add(
+                      BookingCancelRide('Người dùng hủy'),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.redAccent),
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Hủy chuyến xe',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _openRideChat(ride),
-                icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                label: const Text(
-                  'Nhắn tin với tài xế',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(42),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 16),
-
-          if (ride.status == 'Pending')
-            OutlinedButton(
-              onPressed: () => context.read<BookingBloc>().add(
-                BookingCancelRide('Người dùng hủy'),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.redAccent),
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'Hủy chuyến xe',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
+          ),
         ],
       ),
     );

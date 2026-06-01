@@ -33,29 +33,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
+    _otpCtrl.dispose();
     super.dispose();
+  }
+
+  String _normalizePhone(String phone) {
+    final cleaned = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (cleaned.startsWith('84') && !cleaned.startsWith('+84')) {
+      return '+$cleaned';
+    }
+    return cleaned;
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (!_isOtpSent) {
       context.read<AuthBloc>().add(
-            AuthRequestRegistrationOtpRequested(
-              email: _emailCtrl.text.trim(),
-              password: _passCtrl.text,
-              fullName: _nameCtrl.text.trim(),
-              phoneNumber: _phoneCtrl.text.trim(),
-              role: _selectedRole,
-            ),
-          );
+        AuthRequestRegistrationOtpRequested(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
+          fullName: _nameCtrl.text.trim(),
+          phoneNumber: _normalizePhone(_phoneCtrl.text),
+          role: _selectedRole,
+        ),
+      );
     } else {
       context.read<AuthBloc>().add(
-            AuthVerifyRegistrationOtpRequested(
-              email: _emailCtrl.text.trim(),
-              otpCode: _otpCtrl.text.trim(),
-            ),
-          );
+        AuthVerifyRegistrationOtpRequested(
+          email: _emailCtrl.text.trim(),
+          otpCode: _otpCtrl.text.trim(),
+        ),
+      );
     }
   }
 
@@ -70,14 +79,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           if (state is AuthAuthenticated) {
             Navigator.of(context).pushReplacementNamed('/home');
           } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          } else if (state is AuthOperationSuccess && state.message.contains('OTP')) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          } else if (state is AuthOperationSuccess &&
+              state.message.contains('OTP')) {
             setState(() => _isOtpSent = true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         builder: (context, state) {
@@ -118,7 +128,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _isOtpSent ? 'Nhập mã OTP đã được gửi đến email' : 'Tham gia Leaf Go ngay hôm nay!',
+                        _isOtpSent
+                            ? 'Nhập mã OTP đã được gửi đến email'
+                            : 'Tham gia Leaf Go ngay hôm nay!',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,
@@ -155,7 +167,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _nameCtrl,
                             'Họ và tên',
                             Icons.person_outline,
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập Họ và tên' : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Bắt buộc nhập Họ và tên'
+                                : null,
                           ),
                           const SizedBox(height: 16),
                           _field(
@@ -164,7 +178,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Icons.email_outlined,
                             type: TextInputType.emailAddress,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Bắt buộc nhập Email';
+                              if (v == null || v.trim().isEmpty)
+                                return 'Bắt buộc nhập Email';
                               if (!v.contains('@')) return 'Email không hợp lệ';
                               return null;
                             },
@@ -175,7 +190,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             'Số điện thoại',
                             Icons.phone_outlined,
                             type: TextInputType.phone,
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc nhập Số điện thoại' : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Bắt buộc nhập Số điện thoại';
+                              }
+                              final normalized = _normalizePhone(v.trim());
+                              if (!RegExp(
+                                r'^(0|\+84)\d{9,10}',
+                              ).hasMatch(normalized)) {
+                                return 'Số điện thoại phải bắt đầu bằng 0 hoặc +84 và có 10-11 chữ số';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
 
@@ -186,20 +212,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               prefixIcon: const Icon(Icons.badge_outlined),
                               filled: true,
                               fillColor: Colors.grey.shade50,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                             ),
                             items: _roles.map((role) {
                               return DropdownMenuItem(
                                 value: role,
-                                child: Text(role == 'User' ? 'Người dùng' : 'Tài xế'),
+                                child: Text(
+                                  role == 'User' ? 'Người dùng' : 'Tài xế',
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {
@@ -217,24 +252,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               hintText: 'Mật khẩu',
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                                onPressed: () => setState(() => _obscure = !_obscure),
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
                               ),
                               filled: true,
                               fillColor: Colors.grey.shade50,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Bắt buộc nhập Mật khẩu';
-                              if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+                              if (v == null || v.isEmpty)
+                                return 'Bắt buộc nhập Mật khẩu';
+                              if (v.length < 6)
+                                return 'Mật khẩu phải có ít nhất 6 ký tự';
                               return null;
                             },
                           ),
@@ -247,17 +296,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               prefixIcon: const Icon(Icons.lock_outline),
                               filled: true,
                               fillColor: Colors.grey.shade50,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                             ),
-                            validator: (v) => v != _passCtrl.text ? 'Mật khẩu không khớp' : null,
+                            validator: (v) => v != _passCtrl.text
+                                ? 'Mật khẩu không khớp'
+                                : null,
                           ),
                           if (_isOtpSent) ...[
                             const SizedBox(height: 16),
@@ -266,7 +324,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               'Mã OTP 6 số',
                               Icons.security_outlined,
                               type: TextInputType.number,
-                              validator: (v) => (v == null || v.trim().length != 6) ? 'Vui lòng nhập đủ 6 số OTP' : null,
+                              validator: (v) =>
+                                  (v == null || v.trim().length != 6)
+                                  ? 'Vui lòng nhập đủ 6 số OTP'
+                                  : null,
                             ),
                           ],
                           const SizedBox(height: 24),
@@ -282,19 +343,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               elevation: 0,
                             ),
                             child: loading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : Text(_isOtpSent ? 'Xác thực & Tạo tài khoản' : 'Đăng ký', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : Text(
+                                    _isOtpSent
+                                        ? 'Xác thực & Tạo tài khoản'
+                                        : 'Đăng ký',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("Đã có tài khoản? ", style: TextStyle(color: Colors.grey.shade600)),
+                              Text(
+                                "Đã có tài khoản? ",
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
                               GestureDetector(
                                 onTap: () => Navigator.of(context).pop(),
                                 child: Text(
                                   'Đăng nhập ngay',
-                                  style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
@@ -327,7 +404,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prefixIcon: Icon(icon),
         filled: true,
         fillColor: Colors.grey.shade50,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -341,4 +421,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

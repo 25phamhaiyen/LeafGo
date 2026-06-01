@@ -365,31 +365,30 @@ class _HeroCard extends StatelessWidget {
   }
 
   Widget _miniStat(String value, String label, {VoidCallback? onTap}) {
-    final content = Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+    final content = Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 9),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 9),
+        ),
+      ],
     );
+
+    Widget child = content;
     if (onTap != null) {
-      return Expanded(
-        child: GestureDetector(onTap: onTap, child: content),
-      );
+      child = GestureDetector(onTap: onTap, child: child);
     }
-    return content;
+
+    return Expanded(child: child);
   }
 
   Widget _divider() => Container(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/driver/driver_bloc.dart';
+import '../../core/utils/avatar_utils.dart';
 import '../../injection_container.dart';
 
 class DriverHistoryScreen extends StatefulWidget {
@@ -44,11 +45,16 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'Completed': return _primary;
-      case 'Cancelled': return const Color(0xFFEF4444);
-      case 'InProgress': return const Color(0xFF3B82F6);
-      case 'Pending': return const Color(0xFFF59E0B);
-      default: return _textSecondary;
+      case 'Completed':
+        return _primary;
+      case 'Cancelled':
+        return const Color(0xFFEF4444);
+      case 'InProgress':
+        return const Color(0xFF3B82F6);
+      case 'Pending':
+        return const Color(0xFFF59E0B);
+      default:
+        return _textSecondary;
     }
   }
 
@@ -56,20 +62,29 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
 
   String _statusText(String status) {
     switch (status) {
-      case 'Completed': return 'Hoàn thành';
-      case 'Cancelled': return 'Đã hủy';
-      case 'InProgress': return 'Đang đi';
-      case 'Pending': return 'Đang tìm';
-      default: return status;
+      case 'Completed':
+        return 'Hoàn thành';
+      case 'Cancelled':
+        return 'Đã hủy';
+      case 'InProgress':
+        return 'Đang đi';
+      case 'Pending':
+        return 'Đang tìm';
+      default:
+        return status;
     }
   }
 
   IconData _statusIcon(String status) {
     switch (status) {
-      case 'Completed': return Icons.check_circle_rounded;
-      case 'Cancelled': return Icons.cancel_rounded;
-      case 'InProgress': return Icons.directions_car_rounded;
-      default: return Icons.access_time_rounded;
+      case 'Completed':
+        return Icons.check_circle_rounded;
+      case 'Cancelled':
+        return Icons.cancel_rounded;
+      case 'InProgress':
+        return Icons.directions_car_rounded;
+      default:
+        return Icons.access_time_rounded;
     }
   }
 
@@ -87,7 +102,8 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
     for (final ride in items) {
       if (ride['status'] == 'Completed') {
         completed++;
-        totalEarned += (ride['finalPrice'] ?? ride['estimatedPrice'] ?? 0) as num;
+        totalEarned +=
+            (ride['finalPrice'] ?? ride['estimatedPrice'] ?? 0) as num;
         if (ride['rating'] != null) {
           totalRating += (ride['rating']['rating'] as num).toDouble();
           ratingCount++;
@@ -120,29 +136,88 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: _primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: _primary.withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Stack(
         children: [
-          Positioned(right: -20, top: -20, child: Container(width: 100, height: 100, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.08)))),
-          Positioned(right: 30, bottom: -30, child: Container(width: 80, height: 80, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.06)))),
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 30,
+            bottom: -30,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tổng quan', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                const Text(
+                  'Tổng quan',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                const Text('Hành trình của bạn', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                const Text(
+                  'Hành trình của bạn',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    _StatPill(icon: Icons.directions_car_rounded, value: '$completed', label: 'Chuyến đi'),
+                    _StatPill(
+                      icon: Icons.directions_car_rounded,
+                      value: '$completed',
+                      label: 'Chuyến đi',
+                    ),
                     const SizedBox(width: 10),
-                    _StatPill(icon: Icons.payments_rounded, value: totalEarned >= 1000000 ? '${(totalEarned / 1000000).toStringAsFixed(1)}M' : totalEarned >= 1000 ? '${(totalEarned / 1000).toStringAsFixed(0)}K' : totalEarned.toStringAsFixed(0), label: 'Doanh thu'),
+                    _StatPill(
+                      icon: Icons.payments_rounded,
+                      value: totalEarned >= 1000000
+                          ? '${(totalEarned / 1000000).toStringAsFixed(1)}M'
+                          : totalEarned >= 1000
+                          ? '${(totalEarned / 1000).toStringAsFixed(0)}K'
+                          : totalEarned.toStringAsFixed(0),
+                      label: 'Doanh thu',
+                    ),
                     const SizedBox(width: 10),
-                    _StatPill(icon: Icons.star_rounded, value: ratingCount > 0 ? avgRating.toStringAsFixed(1) : '--', label: 'Đánh giá', isRating: true),
+                    _StatPill(
+                      icon: Icons.star_rounded,
+                      value: ratingCount > 0
+                          ? avgRating.toStringAsFixed(1)
+                          : '--',
+                      label: 'Đánh giá',
+                      isRating: true,
+                    ),
                   ],
                 ),
               ],
@@ -157,16 +232,31 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
     final date = DateTime.tryParse(ride['requestedAt'] ?? '') ?? DateTime.now();
     final status = ride['status'] as String? ?? 'Unknown';
     final price = ride['finalPrice'] ?? ride['estimatedPrice'] ?? 0;
-    final userName = ride['user'] != null ? ride['user']['fullName'] ?? 'Khách' : 'Khách';
+    final userName = ride['user'] != null
+        ? ride['user']['fullName'] ?? 'Khách'
+        : 'Khách';
     final hasRating = ride['rating'] != null;
 
     return FadeTransition(
       opacity: _fadeAnim,
       child: SlideTransition(
-        position: Tween<Offset>(begin: Offset(0, 0.08 * (index + 1)), end: Offset.zero).animate(_fadeAnim),
+        position: Tween<Offset>(
+          begin: Offset(0, 0.08 * (index + 1)),
+          end: Offset.zero,
+        ).animate(_fadeAnim),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))]),
+          decoration: BoxDecoration(
+            color: _cardBg,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             children: [
               Padding(
@@ -177,47 +267,109 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: _statusBg(status), borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _statusBg(status),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(_statusIcon(status), size: 12, color: _statusColor(status)),
+                              Icon(
+                                _statusIcon(status),
+                                size: 12,
+                                color: _statusColor(status),
+                              ),
                               const SizedBox(width: 4),
-                              Text(_statusText(status), style: TextStyle(color: _statusColor(status), fontSize: 11, fontWeight: FontWeight.w700)),
+                              Text(
+                                _statusText(status),
+                                style: TextStyle(
+                                  color: _statusColor(status),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         const Spacer(),
-                        Text(DateFormat('dd/MM/yyyy · HH:mm').format(date), style: const TextStyle(color: _textSecondary, fontSize: 11)),
+                        Text(
+                          DateFormat('dd/MM/yyyy · HH:mm').format(date),
+                          style: const TextStyle(
+                            color: _textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    _buildRouteRow(ride['pickupAddress'] ?? '', ride['destinationAddress'] ?? ''),
+                    _buildRouteRow(
+                      ride['pickupAddress'] ?? '',
+                      ride['destinationAddress'] ?? '',
+                    ),
                   ],
                 ),
               ),
               Container(
-                decoration: const BoxDecoration(color: Color(0xFFF9FAFB), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(18), bottomRight: Radius.circular(18))),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(18),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
-                    CircleAvatar(
+                    buildAvatarCircle(
+                      ride['user']?['avatar']?.toString() ??
+                          ride['user']?['avatarUrl']?.toString(),
                       radius: 16,
                       backgroundColor: _primaryLight,
-                      backgroundImage: ride['user']?['avatar'] != null && ride['user']['avatar'].toString().isNotEmpty ? NetworkImage(ride['user']['avatar']) : null,
-                      child: ride['user']?['avatar'] == null || ride['user']['avatar'].toString().isEmpty ? Text(userName.isNotEmpty ? userName[0].toUpperCase() : '?', style: const TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.bold)) : null,
+                      placeholderIconColor: _primary,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(userName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textPrimary))),
+                    Expanded(
+                      child: Text(
+                        userName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _textPrimary,
+                        ),
+                      ),
+                    ),
                     if (status == 'Completed' && hasRating) ...[
-                      Row(children: List.generate(5, (i) {
-                        final r = (ride['rating']['rating'] as num).toInt();
-                        return Icon(i < r ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber, size: 13);
-                      })),
+                      Row(
+                        children: List.generate(5, (i) {
+                          final r = (ride['rating']['rating'] as num).toInt();
+                          return Icon(
+                            i < r
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: Colors.amber,
+                            size: 13,
+                          );
+                        }),
+                      ),
                       const SizedBox(width: 8),
                     ],
-                    Text(_formatCurrency(price as num), style: const TextStyle(fontWeight: FontWeight.w800, color: _primary, fontSize: 15)),
+                    Text(
+                      _formatCurrency(price as num),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: _primary,
+                        fontSize: 15,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -234,9 +386,39 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
       children: [
         Column(
           children: [
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: _primary, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: _primary.withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 1))])),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: _primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primary.withOpacity(0.4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
             Container(width: 1.5, height: 22, color: Colors.grey.shade300),
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: const Color(0xFFEF4444), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5), boxShadow: [BoxShadow(color: const Color(0xFFEF4444).withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 1))])),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withOpacity(0.4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(width: 12),
@@ -244,9 +426,19 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(pickup, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: _textPrimary)),
+              Text(
+                pickup,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, color: _textPrimary),
+              ),
               const SizedBox(height: 14),
-              Text(destination, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: _textPrimary)),
+              Text(
+                destination,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, color: _textPrimary),
+              ),
             ],
           ),
         ),
@@ -258,11 +450,27 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(title: const Text('Lịch sử cuốc xe', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: _textPrimary)), centerTitle: true, elevation: 0, backgroundColor: _bg, surfaceTintColor: Colors.transparent, foregroundColor: _textPrimary),
+      appBar: AppBar(
+        title: const Text(
+          'Lịch sử cuốc xe',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            color: _textPrimary,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: _bg,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: _textPrimary,
+      ),
       body: BlocBuilder<DriverBloc, DriverState>(
         builder: (context, state) {
           if (state.isLoading && state.historyData == null) {
-            return const Center(child: CircularProgressIndicator(color: _primary));
+            return const Center(
+              child: CircularProgressIndicator(color: _primary),
+            );
           }
 
           if (state.error != null && state.historyData == null) {
@@ -270,11 +478,29 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline_rounded, size: 60, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 60,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 12),
-                  Text('Lỗi: ${state.error}', style: const TextStyle(color: _textSecondary)),
+                  Text(
+                    'Lỗi: ${state.error}',
+                    style: const TextStyle(color: _textSecondary),
+                  ),
                   const SizedBox(height: 16),
-                  ElevatedButton(onPressed: () => context.read<DriverBloc>().add(DriverFetchHistory()), style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('Thử lại')),
+                  ElevatedButton(
+                    onPressed: () =>
+                        context.read<DriverBloc>().add(DriverFetchHistory()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Thử lại'),
+                  ),
                 ],
               ),
             );
@@ -287,11 +513,33 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(width: 96, height: 96, decoration: BoxDecoration(color: _primaryLight, shape: BoxShape.circle), child: const Icon(Icons.directions_car_rounded, size: 48, color: _primary)),
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: _primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.directions_car_rounded,
+                      size: 48,
+                      color: _primary,
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  const Text('Chưa có chuyến đi nào', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: _textPrimary)),
+                  const Text(
+                    'Chưa có chuyến đi nào',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 6),
-                  const Text('Các cuốc xe của bạn sẽ xuất hiện tại đây', style: TextStyle(fontSize: 13, color: _textSecondary)),
+                  const Text(
+                    'Các cuốc xe của bạn sẽ xuất hiện tại đây',
+                    style: TextStyle(fontSize: 13, color: _textSecondary),
+                  ),
                 ],
               ),
             );
@@ -299,13 +547,19 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
 
           return RefreshIndicator(
             color: _primary,
-            onRefresh: () async => context.read<DriverBloc>().add(DriverFetchHistory()),
+            onRefresh: () async =>
+                context.read<DriverBloc>().add(DriverFetchHistory()),
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _buildStatsHeader(items)),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  sliver: SliverList(delegate: SliverChildBuilderDelegate((_, i) => _buildRideCard(items[i], i), childCount: items.length)),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => _buildRideCard(items[i], i),
+                      childCount: items.length,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -317,7 +571,12 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
 }
 
 class _StatPill extends StatelessWidget {
-  const _StatPill({required this.icon, required this.value, required this.label, this.isRating = false});
+  const _StatPill({
+    required this.icon,
+    required this.value,
+    required this.label,
+    this.isRating = false,
+  });
   final IconData icon;
   final String value;
   final String label;
@@ -328,15 +587,41 @@ class _StatPill extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Icon(icon, size: 14, color: Colors.white70), if (isRating && value != '--') ...[const SizedBox(width: 3), const Icon(Icons.star_rounded, size: 10, color: Colors.amber)]]),
+            Row(
+              children: [
+                Icon(icon, size: 14, color: Colors.white70),
+                if (isRating && value != '--') ...[
+                  const SizedBox(width: 3),
+                  const Icon(Icons.star_rounded, size: 10, color: Colors.amber),
+                ],
+              ],
+            ),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

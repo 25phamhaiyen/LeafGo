@@ -206,7 +206,22 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     print(response.body);
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to cancel ride');
+      String message = 'Failed to cancel ride';
+      try {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        if (data['error'] != null) {
+          message = data['error'] as String;
+        } else if (data['message'] != null) {
+          message = data['message'] as String;
+        }
+        if (data['details'] is Map<String, dynamic>) {
+          final details = data['details'] as Map<String, dynamic>;
+          if (details.isNotEmpty) {
+            message = details.values.first.toString();
+          }
+        }
+      } catch (_) {}
+      throw Exception(message);
     }
   }
 
