@@ -8,6 +8,8 @@ import 'package:leafgo_app/core/utils/avatar_utils.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/blocs/driver/driver_bloc.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
+import 'package:leafgo_app/screens/edit_profile_screen.dart';
+import 'package:leafgo_app/screens/change_password_screen.dart';
 
 enum _AvatarAction { view, gallery, camera }
 
@@ -24,6 +26,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _green500 = Color(0xFF10B981);
   static const _green400 = Color(0xFF34d399);
   static const _green50 = Color(0xFFe8f8f1);
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   // ─── avatar tap handler (giữ nguyên logic gốc) ───────────────────────────
   Future<void> _onAvatarTap(
@@ -140,196 +147,297 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      body: BlocBuilder<UserBloc, UserState>(
-        builder: (context, state) {
-          // loading state
-          if (state.isLoading && state.profile == null) {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthOperationSuccess) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
 
-          final user = state.profile;
+          if (state is AuthFailure) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        child: BlocBuilder<UserBloc, UserState>(
+          builder: (context, state) {
+            // loading state
+            if (state.isLoading && state.profile == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          // error / no profile state
-          if (user == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.person_off_outlined,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Không thể tải thông tin hồ sơ'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<UserBloc>().add(UserFetchProfile()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _green500,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            final user = state.profile;
+
+            // error / no profile state
+            if (user == null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.person_off_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Không thể tải thông tin hồ sơ'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () =>
+                          context.read<UserBloc>().add(UserFetchProfile()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _green500,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: const Text('Thử lại'),
                     ),
-                    child: const Text('Thử lại'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final isDriver = user.role == 'Driver';
-          final initials = _getInitials(user.fullName);
-
-          return CustomScrollView(
-            slivers: [
-              // ── Hero header ──────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: _HeroHeader(
-                  user: user,
-                  initials: initials,
-                  isDriver: isDriver,
-                  isLoading: state.isLoading,
-                  green900: _green900,
-                  green500: _green500,
-                  green400: _green400,
-                  onAvatarTap: () => _onAvatarTap(context, user.avatar),
+                  ],
                 ),
-              ),
+              );
+            }
 
-              // ── Body ─────────────────────────────────────────────────────
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Thông tin cá nhân
-                    _sectionLabel('Thông tin cá nhân'),
-                    _InfoCard(
-                      children: [
-                        _InfoRow(
-                          icon: Icons.phone_outlined,
-                          iconBg: _green50,
-                          iconColor: _green700,
-                          label: 'Số điện thoại',
-                          value: user.phoneNumber,
-                        ),
-                        _InfoRow(
-                          icon: Icons.email_outlined,
-                          iconBg: _green50,
-                          iconColor: _green700,
-                          label: 'Email',
-                          value: user.email,
-                        ),
-                        _InfoRow(
-                          icon: Icons.badge_outlined,
-                          iconBg: _green50,
-                          iconColor: _green700,
-                          label: 'Vai trò',
-                          value: isDriver ? 'Tài xế' : 'Người dùng',
-                        ),
-                        _InfoRow(
-                          icon: Icons.calendar_today_outlined,
-                          iconBg: _green50,
-                          iconColor: _green700,
-                          label: 'Thành viên từ',
-                          value: user.createdAt != null
-                              ? DateFormat('dd/MM/yyyy').format(user.createdAt!)
-                              : 'N/A',
-                          isLast: true,
-                        ),
-                      ],
-                    ),
+            final isDriver = user.role == 'Driver';
+            final initials = _getInitials(user.fullName);
 
-                    // Phương tiện — chỉ hiện với Driver
-                    if (isDriver) ...[
-                      _sectionLabel('Phương tiện'),
-                      _VehicleCard(
-                        green50: _green50,
-                        green500: _green500,
-                        green700: _green700,
+            return RefreshIndicator(
+              color: _green500,
+              onRefresh: () async =>
+                  context.read<UserBloc>().add(UserFetchProfile()),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                // ── Hero header ──────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _HeroHeader(
+                    user: user,
+                    initials: initials,
+                    isDriver: isDriver,
+                    isLoading: state.isLoading,
+                    green900: _green900,
+                    green500: _green500,
+                    green400: _green400,
+                    onAvatarTap: () => _onAvatarTap(context, user.avatar),
+                  ),
+                ),
+
+                // ── Body ─────────────────────────────────────────────────────
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Thông tin cá nhân
+                      _sectionLabel('Thông tin cá nhân'),
+                      _InfoCard(
+                        children: [
+                          _InfoRow(
+                            icon: Icons.phone_outlined,
+                            iconBg: _green50,
+                            iconColor: _green700,
+                            label: 'Số điện thoại',
+                            value: user.phoneNumber,
+                          ),
+                          _InfoRow(
+                            icon: Icons.email_outlined,
+                            iconBg: _green50,
+                            iconColor: _green700,
+                            label: 'Email',
+                            value: user.email,
+                          ),
+                          _InfoRow(
+                            icon: Icons.badge_outlined,
+                            iconBg: _green50,
+                            iconColor: _green700,
+                            label: 'Vai trò',
+                            value: isDriver ? 'Tài xế' : 'Người dùng',
+                          ),
+                          _InfoRow(
+                            icon: Icons.calendar_today_outlined,
+                            iconBg: _green50,
+                            iconColor: _green700,
+                            label: 'Thành viên từ',
+                            value: user.createdAt != null
+                                ? DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(user.createdAt!)
+                                : 'N/A',
+                            isLast: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      InkWell(
                         onTap: () {
-                          final driverBloc = context.read<DriverBloc>();
-                          final bookingBloc = context.read<BookingBloc>();
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => MultiBlocProvider(
-                                providers: [
-                                  BlocProvider.value(value: driverBloc),
-                                  BlocProvider.value(value: bookingBloc),
-                                ],
-                                child: const DriverVehicleScreen(),
-                              ),
+                              builder: (_) => EditProfileScreen(user: user),
                             ),
                           );
                         },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: _green50,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.edit_outlined,
+                                  color: _green700,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Text(
+                                  'Chỉnh sửa thông tin cá nhân',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: _green500),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
 
-                    // Khác
-                    _sectionLabel('Khác'),
-                    _InfoCard(
-                      children: [
-                        _InfoRow(
-                          icon: Icons.notifications_outlined,
-                          iconBg: const Color(0xFFFFF3E0),
-                          iconColor: const Color(0xFFB45309),
-                          label: 'Thông báo',
-                          value: 'Cài đặt thông báo',
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        _InfoRow(
-                          icon: Icons.lock_outline,
-                          iconBg: const Color(0xFFF0F4FF),
-                          iconColor: const Color(0xFF185FA5),
-                          label: 'Bảo mật',
-                          value: 'Đổi mật khẩu',
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        _InfoRow(
-                          icon: Icons.help_outline,
-                          iconBg: const Color(0xFFF5F0FF),
-                          iconColor: const Color(0xFF534AB7),
-                          label: 'Hỗ trợ',
-                          value: 'Trung tâm trợ giúp',
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Colors.grey,
-                          ),
-                          isLast: true,
+                      // Phương tiện — chỉ hiện với Driver
+                      if (isDriver) ...[
+                        _sectionLabel('Phương tiện'),
+                        _VehicleCard(
+                          green50: _green50,
+                          green500: _green500,
+                          green700: _green700,
+                          onTap: () {
+                            final driverBloc = context.read<DriverBloc>();
+                            final bookingBloc = context.read<BookingBloc>();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => MultiBlocProvider(
+                                  providers: [
+                                    BlocProvider.value(value: driverBloc),
+                                    BlocProvider.value(value: bookingBloc),
+                                  ],
+                                  child: const DriverVehicleScreen(),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
-                    ),
 
-                    const SizedBox(height: 24),
+                      // Khác
+                      _sectionLabel('Khác'),
+                      _InfoCard(
+                        children: [
+                          _InfoRow(
+                            icon: Icons.notifications_outlined,
+                            iconBg: const Color(0xFFFFF3E0),
+                            iconColor: const Color(0xFFB45309),
+                            label: 'Thông báo',
+                            value: 'Cài đặt thông báo',
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          _InfoRow(
+                            icon: Icons.lock_outline,
+                            iconBg: const Color(0xFFF0F4FF),
+                            iconColor: const Color(0xFF185FA5),
+                            label: 'Bảo mật',
+                            value: 'Đổi mật khẩu',
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ChangePasswordScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _InfoRow(
+                            icon: Icons.help_outline,
+                            iconBg: const Color(0xFFF5F0FF),
+                            iconColor: const Color(0xFF534AB7),
+                            label: 'Hỗ trợ',
+                            value: 'Trung tâm trợ giúp',
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
+                            isLast: true,
+                          ),
+                        ],
+                      ),
 
-                    // Logout
-                    _LogoutButton(
-                      onTap: () {
-                        context.read<AuthBloc>().add(AuthLogoutRequested());
-                        Navigator.of(
-                          context,
-                        ).pushNamedAndRemoveUntil('/login', (route) => false);
-                      },
-                    ),
-                  ]),
+                      const SizedBox(height: 24),
+
+                      // Logout
+                      _LogoutButton(onTap: () => _confirmLogout(context)),
+                    ]),
+                  ),
                 ),
+                ],
               ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _green500),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmLogout == true) {
+      context.read<AuthBloc>().add(AuthLogoutRequested());
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   Widget _sectionLabel(String text) => Padding(
@@ -697,6 +805,7 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final Widget? trailing;
   final bool isLast;
+  final VoidCallback? onTap;
 
   const _InfoRow({
     required this.icon,
@@ -706,11 +815,12 @@ class _InfoRow extends StatelessWidget {
     required this.value,
     this.trailing,
     this.isLast = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final row = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: isLast
@@ -754,6 +864,8 @@ class _InfoRow extends StatelessWidget {
         ],
       ),
     );
+
+    return onTap != null ? InkWell(onTap: onTap, child: row) : row;
   }
 }
 

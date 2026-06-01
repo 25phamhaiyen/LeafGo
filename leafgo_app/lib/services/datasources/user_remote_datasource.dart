@@ -16,6 +16,8 @@ abstract class UserRemoteDataSource {
     int page = 1,
     int pageSize = 10,
     String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
     required String token,
   });
 }
@@ -111,14 +113,24 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     int page = 1,
     int pageSize = 10,
     String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
     required String token,
   }) async {
-    String url =
-        '$baseUrl/api/Users/ride-history?Page=$page&PageSize=$pageSize';
-    if (status != null) url += '&Status=$status';
+    final params = <String, String>{
+      'Page': page.toString(),
+      'PageSize': pageSize.toString(),
+    };
+    if (status != null) params['Status'] = status;
+    if (fromDate != null) params['FromDate'] = fromDate.toIso8601String();
+    if (toDate != null) params['ToDate'] = toDate.toIso8601String();
+
+    final uri = Uri.parse(
+      '$baseUrl/api/Users/ride-history',
+    ).replace(queryParameters: params);
 
     final response = await client.get(
-      Uri.parse(url),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
@@ -126,7 +138,14 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       if (data['success'] == true) {
         return data['data']; // Returns items, totalItems, totalPages, etc.
       }
+      throw Exception(
+        'Failed to load ride history: unexpected response structure',
+      );
+    } else {
+      final body = utf8.decode(response.bodyBytes);
+      throw Exception(
+        'Failed to load ride history: ${response.statusCode} $body',
+      );
     }
-    throw Exception('Failed to load ride history');
   }
 }

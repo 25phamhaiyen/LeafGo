@@ -17,6 +17,8 @@ abstract class UserRepository {
     int page = 1,
     int pageSize = 10,
     String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
     required String token,
   });
 }
@@ -45,11 +47,15 @@ class UserRepositoryImpl implements UserRepository {
     int page = 1,
     int pageSize = 10,
     String? status,
+    DateTime? fromDate,
+    DateTime? toDate,
     required String token,
   }) => remote.getRideHistory(
     page: page,
     pageSize: pageSize,
     status: status,
+    fromDate: fromDate,
+    toDate: toDate,
     token: token,
   );
 }
