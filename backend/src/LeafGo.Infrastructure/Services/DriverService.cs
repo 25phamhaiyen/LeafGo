@@ -168,7 +168,8 @@ namespace LeafGo.Infrastructure.Services
                         {
                             Id = ride.UserId,
                             FullName = ride.UserName,
-                            PhoneNumber = ride.UserPhone
+                            PhoneNumber = ride.UserPhone,
+                            Avatar = ride.User.Avatar
                         },
                         DistanceFromDriver = Convert.ToDecimal(distance)
                     });
@@ -262,7 +263,8 @@ namespace LeafGo.Infrastructure.Services
                 {
                     Id = ride.UserId,
                     FullName = ride.UserName,
-                    PhoneNumber = ride.UserPhone
+                    PhoneNumber = ride.UserPhone,
+                    Avatar = ride.User.Avatar
                 },
                 PickupAddress = ride.PickupAddress,
                 PickupLatitude = ride.PickupLatitude,
@@ -344,7 +346,8 @@ namespace LeafGo.Infrastructure.Services
                 {
                     Id = ride.UserId,
                     FullName = ride.UserName,
-                    PhoneNumber = ride.UserPhone
+                    PhoneNumber = ride.UserPhone,
+                    Avatar = ride.User.Avatar
                 },
                 PickupAddress = ride.PickupAddress,
                 PickupLatitude = ride.PickupLatitude,
@@ -430,7 +433,8 @@ namespace LeafGo.Infrastructure.Services
                 .Select(r => new
                 {
                     Ride = r,
-                    Rating = _context.Ratings.FirstOrDefault(rt => rt.RideId == r.Id)
+                    Rating = _context.Ratings.FirstOrDefault(rt => rt.RideId == r.Id),
+                    UserAvatar = r.User.Avatar
                 })
                 .ToListAsync();
 
@@ -441,7 +445,8 @@ namespace LeafGo.Infrastructure.Services
                 {
                     Id = r.Ride.UserId,
                     FullName = r.Ride.UserName,
-                    PhoneNumber = r.Ride.UserPhone
+                    PhoneNumber = r.Ride.UserPhone,
+                    Avatar = r.UserAvatar
                 },
                 PickupAddress = r.Ride.PickupAddress,
                 DestinationAddress = r.Ride.DestinationAddress,

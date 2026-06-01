@@ -694,6 +694,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   @override
   Future<void> close() {
     _stopPendingPollTimer();
+    signalRService.offAll();
     return super.close();
   }
 

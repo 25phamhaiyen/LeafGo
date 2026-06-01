@@ -10,6 +10,7 @@ import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
+import '../../core/utils/avatar_utils.dart';
 import '../../injection_container.dart';
 import '../../blocs/driver/driver_bloc.dart';
 
@@ -873,7 +874,13 @@ class _PendingRideCardState extends State<_PendingRideCard> {
                   // Header: avatar + name + price
                   Row(
                     children: [
-                      _Avatar(initials: initials),
+                      buildAvatarCircle(
+                        data['user']?['avatar']?.toString() ??
+                            data['user']?['avatarUrl']?.toString(),
+                        radius: 36,
+                        backgroundColor: _green,
+                        placeholderIconColor: Colors.white,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -1212,7 +1219,12 @@ class _ActiveRidePanel extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _Avatar(initials: initials, size: 44, fontSize: 16),
+                buildAvatarCircle(
+                  ride.user?.avatar,
+                  radius: 44,
+                  backgroundColor: _surface,
+                  placeholderIconColor: _green,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
