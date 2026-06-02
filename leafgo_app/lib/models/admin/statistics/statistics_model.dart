@@ -39,9 +39,9 @@ class StatisticsModel {
       totalCompletedRides: json['totalCompletedRides'] as int,
       totalPendingRides: json['totalPendingRides'] as int,
       todayRides: json['todayRides'] as int,
-      totalRevenue: (json['totalRevenue'] as num).toDouble(),
-      todayRevenue: (json['todayRevenue'] as num).toDouble(),
-      thisMonthRevenue: (json['thisMonthRevenue'] as num).toDouble(),
+      totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
+      todayRevenue: (json['todayRevenue'] as num?)?.toDouble() ?? 0.0,
+      thisMonthRevenue: (json['thisMonthRevenue'] as num?)?.toDouble() ?? 0.0,
       topDrivers: (json['topDrivers'] as List)
           .map((e) => TopDriver.fromJson(e))
           .toList(),

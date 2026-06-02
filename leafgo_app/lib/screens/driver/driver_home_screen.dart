@@ -8,6 +8,7 @@ import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/models/booking/location_model.dart';
 import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
+import 'package:leafgo_app/services/chat_notification_manager.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
 import '../../core/utils/avatar_utils.dart';
@@ -117,6 +118,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           }
           if (state.currentRide == null && _routePoints.isNotEmpty) {
             setState(() => _routePoints = []);
+          }
+
+          if (state.currentRide != null) {
+            final currentUserId = state.currentRide!.driver?.id ?? 'driver';
+            ChatNotificationManager().startListening(
+              state.currentRide!.id,
+              currentUserId,
+              context,
+            );
+          } else {
+            ChatNotificationManager().stopListening();
           }
         },
         builder: (context, state) {
@@ -1296,21 +1308,58 @@ class _ActiveRidePanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   // Message button
-                  _ActionButton(
-                    icon: Icons.chat_bubble_rounded,
-                    color: const Color(0xFF3B82F6),
-                    bgColor: const Color(0xFFEFF6FF),
-                    borderColor: const Color(0xFFBFDBFE),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            rideId: ride.id,
-                            currentUserId: ride.driver?.id ?? 'driver',
-                            recipientName: ride.user?.fullName ?? 'Khách hàng',
+                  ValueListenableBuilder<int>(
+                    valueListenable: ChatNotificationManager().unreadCountNotifier,
+                    builder: (context, unreadCount, child) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          _ActionButton(
+                            icon: Icons.chat_bubble_rounded,
+                            color: const Color(0xFF3B82F6),
+                            bgColor: const Color(0xFFEFF6FF),
+                            borderColor: const Color(0xFFBFDBFE),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                    rideId: ride.id,
+                                    currentUserId: ride.driver?.id ?? 'driver',
+                                    recipientName: ride.user?.fullName ?? 'Khách hàng',
+                                  ),
+                                ),
+                              ).then((_) {
+                                ChatNotificationManager().unreadCountNotifier.value = 0;
+                              });
+                            },
                           ),
-                        ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '$unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       );
                     },
                   ),

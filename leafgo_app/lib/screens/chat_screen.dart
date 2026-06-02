@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/chat/chat_models.dart';
 import '../../services/chat_service.dart';
+import 'package:leafgo_app/services/chat_notification_manager.dart';
 
 class ChatScreen extends StatefulWidget {
   final String rideId;
@@ -23,6 +24,12 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    ChatNotificationManager().enterChat();
+  }
+
   void _sendMessage() {
     final text = _messageController.text.trim();
     if (text.isNotEmpty) {
@@ -41,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    ChatNotificationManager().exitChat();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();

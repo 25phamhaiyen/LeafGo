@@ -104,8 +104,8 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
         completed++;
         totalEarned +=
             (ride['finalPrice'] ?? ride['estimatedPrice'] ?? 0) as num;
-        if (ride['rating'] != null) {
-          totalRating += (ride['rating']['rating'] as num).toDouble();
+        if (ride['rating'] != null && ride['rating']['rating'] != null) {
+          totalRating += (ride['rating']['rating'] as num?)?.toDouble() ?? 0.0;
           ratingCount++;
         }
       }
@@ -347,10 +347,10 @@ class _DriverHistoryScreenState extends State<DriverHistoryScreen>
                         ),
                       ),
                     ),
-                    if (status == 'Completed' && hasRating) ...[
+                    if (status == 'Completed' && hasRating && ride['rating']['rating'] != null) ...[
                       Row(
                         children: List.generate(5, (i) {
-                          final r = (ride['rating']['rating'] as num).toInt();
+                          final r = (ride['rating']['rating'] as num?)?.toInt() ?? 0;
                           return Icon(
                             i < r
                                 ? Icons.star_rounded

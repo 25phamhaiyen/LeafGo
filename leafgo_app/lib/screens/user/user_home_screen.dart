@@ -8,6 +8,7 @@ import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/core/utils/avatar_utils.dart';
 import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
+import 'package:leafgo_app/services/chat_notification_manager.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -62,7 +63,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           recipientName: ride.driver?.fullName ?? 'Tài xế',
         ),
       ),
-    );
+    ).then((_) {
+      ChatNotificationManager().unreadCountNotifier.value = 0;
+    });
   }
 
   /// Map vehicle type name to an icon. Extend as needed.
@@ -117,6 +120,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         if (state.pickupLocation != null &&
             state.pickupLocation!.hasValidCoordinates) {
           _mapController.move(state.pickupLocation!.toLatLng, 15);
+        }
+
+        if (state.currentRide != null) {
+          final authState = context.read<AuthBloc>().state;
+          final authUserId = authState is AuthAuthenticated ? authState.user.id : '';
+          final rideUserId = state.currentRide!.user?.id ?? '';
+          final currentUserId = rideUserId.isNotEmpty ? rideUserId : authUserId;
+          if (currentUserId.isNotEmpty) {
+            ChatNotificationManager().startListening(
+              state.currentRide!.id,
+              currentUserId,
+              context,
+            );
+          }
+        } else {
+          ChatNotificationManager().stopListening();
         }
       },
       child: Scaffold(
@@ -806,18 +825,53 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.chat,
-                                color: Color(0xFF10B981),
-                                size: 16,
-                              ),
-                              onPressed: () => _openRideChat(ride),
-                              constraints: const BoxConstraints.tightFor(
-                                width: 32,
-                                height: 32,
-                              ),
-                              padding: EdgeInsets.zero,
+                            ValueListenableBuilder<int>(
+                              valueListenable: ChatNotificationManager().unreadCountNotifier,
+                              builder: (context, unreadCount, child) {
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.chat,
+                                        color: Color(0xFF10B981),
+                                        size: 16,
+                                      ),
+                                      onPressed: () => _openRideChat(ride),
+                                      constraints: const BoxConstraints.tightFor(
+                                        width: 32,
+                                        height: 32,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    if (unreadCount > 0)
+                                      Positioned(
+                                        top: -2,
+                                        right: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 14,
+                                            minHeight: 14,
+                                          ),
+                                          child: Text(
+                                            '$unreadCount',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                             IconButton(
                               icon: const Icon(
@@ -842,10 +896,73 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _openRideChat(ride),
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: const Text(
-                        'Nhắn tin với tài xế',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      icon: ValueListenableBuilder<int>(
+                        valueListenable: ChatNotificationManager().unreadCountNotifier,
+                        builder: (context, unreadCount, child) {
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Icon(Icons.chat_bubble_outline, size: 18),
+                              if (unreadCount > 0)
+                                Positioned(
+                                  top: -4,
+                                  right: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 12,
+                                      minHeight: 12,
+                                    ),
+                                    child: Text(
+                                      '$unreadCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 7,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                      label: ValueListenableBuilder<int>(
+                        valueListenable: ChatNotificationManager().unreadCountNotifier,
+                        builder: (context, unreadCount, child) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Nhắn tin với tài xế',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              if (unreadCount > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$unreadCount tin mới',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
