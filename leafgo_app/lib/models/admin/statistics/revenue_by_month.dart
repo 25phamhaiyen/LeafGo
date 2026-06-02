@@ -12,7 +12,7 @@ class RevenueByMonth {
   factory RevenueByMonth.fromJson(Map<String, dynamic> json) {
     return RevenueByMonth(
       month: json['month'] as String,
-      revenue: (json['revenue'] as num).toDouble(),
+      revenue: (json['revenue'] as num?)?.toDouble() ?? 0.0,
       totalRides: json['totalRides'] as int,
     );
   }

@@ -14,9 +14,9 @@ class UserStats {
   factory UserStats.fromJson(Map<String, dynamic> json) {
     return UserStats(
       totalRides: json['totalRides'] as int,
-      totalSpent: (json['totalSpent'] as num).toDouble(),
-      totalEarnings: (json['totalEarnings'] as num).toDouble(),
-      averageRating: (json['averageRating'] as num).toDouble(),
+      totalSpent: (json['totalSpent'] as num?)?.toDouble() ?? 0.0,
+      totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
+      averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

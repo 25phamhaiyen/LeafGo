@@ -6,7 +6,7 @@ class RideRating {
 
   factory RideRating.fromJson(Map<String, dynamic> json) {
     return RideRating(
-      rating: (json['rating'] as num).toDouble(),
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       comment: json['comment'] as String?,
     );
   }

@@ -201,8 +201,8 @@ class _HistoryScreenState extends State<HistoryScreen>
         completed++;
         totalSpent +=
             (ride['finalPrice'] ?? ride['estimatedPrice'] ?? 0) as num;
-        if (ride['rating'] != null) {
-          totalRating += (ride['rating']['rating'] as num).toDouble();
+        if (ride['rating'] != null && ride['rating']['rating'] != null) {
+          totalRating += (ride['rating']['rating'] as num?)?.toDouble() ?? 0.0;
           ratingCount++;
         }
       }

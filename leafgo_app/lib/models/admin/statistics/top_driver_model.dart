@@ -21,8 +21,8 @@ class TopDriver {
       fullName: json['fullName'] as String,
       avatar: json['avatar'] as String?,
       totalRides: json['totalRides'] as int,
-      totalEarnings: (json['totalEarnings'] as num).toDouble(),
-      averageRating: (json['averageRating'] as num).toDouble(),
+      totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
+      averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

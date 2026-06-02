@@ -55,9 +55,9 @@ class AdminRideModel {
           : null,
       pickupAddress: json['pickupAddress'] as String,
       destinationAddress: json['destinationAddress'] as String,
-      distance: (json['distance'] as num).toDouble(),
-      estimatedPrice: (json['estimatedPrice'] as num).toDouble(),
-      finalPrice: (json['finalPrice'] as num).toDouble(),
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      estimatedPrice: (json['estimatedPrice'] as num?)?.toDouble() ?? 0.0,
+      finalPrice: (json['finalPrice'] as num?)?.toDouble() ?? 0.0,
       status: json['status'] as String,
       requestedAt: DateTime.parse(json['requestedAt'] as String),
       acceptedAt: json['acceptedAt'] != null

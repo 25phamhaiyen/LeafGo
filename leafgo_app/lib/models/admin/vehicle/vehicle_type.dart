@@ -23,8 +23,8 @@ class VehicleTypeModel {
     return VehicleTypeModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      basePrice: (json['basePrice'] as num).toDouble(),
-      pricePerKm: (json['pricePerKm'] as num).toDouble(),
+      basePrice: (json['basePrice'] as num?)?.toDouble() ?? 0.0,
+      pricePerKm: (json['pricePerKm'] as num?)?.toDouble() ?? 0.0,
       description: json['description'] as String?,
       isActive: json['isActive'] as bool,
       totalDrivers: json['totalDrivers'] as int,
