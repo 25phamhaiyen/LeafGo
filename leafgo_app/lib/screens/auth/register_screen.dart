@@ -196,7 +196,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               }
                               final normalized = _normalizePhone(v.trim());
                               if (!RegExp(
-                                r'^(0|\+84)\d{9,10}',
+                                r'^(0|\+84)\d{9,10}$',
                               ).hasMatch(normalized)) {
                                 return 'Số điện thoại phải bắt đầu bằng 0 hoặc +84 và có 10-11 chữ số';
                               }
