@@ -2,6 +2,8 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:leafgo_app/services/usecases/auth_usecases.dart';
+import 'package:leafgo_app/services/social_auth_service.dart';
+import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -18,6 +20,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ChangePasswordUseCase _changePassword;
   final ForgotPasswordUseCase _forgotPassword;
   final ResetPasswordUseCase _resetPassword;
+  final SocialLoginUseCase _socialLogin;
+  final CompleteSocialRegistrationUseCase _completeSocialRegistration;
+  final SocialAuthService _socialAuthService;
 
   AuthBloc({
     required RequestRegistrationOtpUseCase requestRegistrationOtp,
@@ -29,6 +34,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required ChangePasswordUseCase changePassword,
     required ForgotPasswordUseCase forgotPassword,
     required ResetPasswordUseCase resetPassword,
+    required SocialLoginUseCase socialLogin,
+    required CompleteSocialRegistrationUseCase completeSocialRegistration,
+    required SocialAuthService socialAuthService,
   }) : _requestRegistrationOtp = requestRegistrationOtp,
        _register = register,
        _login = login,
@@ -38,6 +46,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _changePassword = changePassword,
        _forgotPassword = forgotPassword,
        _resetPassword = resetPassword,
+       _socialLogin = socialLogin,
+       _completeSocialRegistration = completeSocialRegistration,
+       _socialAuthService = socialAuthService,
        super(AuthInitial()) {
     on<AuthCheckCachedUser>(_onCheckCachedUser);
     on<AuthRequestRegistrationOtpRequested>(_onRequestRegistrationOtp);
@@ -48,6 +59,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthForgotPasswordRequested>(_onForgotPassword);
     on<AuthResetPasswordRequested>(_onResetPassword);
     on<AuthRefreshTokenRequested>(_onRefreshToken);
+    on<AuthSocialLoginRequested>(_onSocialLogin);
+    on<AuthCompleteSocialRegistration>(_onCompleteSocialRegistration);
   }
 
   // ── Handlers ─────────────────────────────────────────────────
@@ -194,5 +207,71 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthUnauthenticated());
     }
     // On success: tokens updated silently in local storage; stay Authenticated
+  }
+
+  Future<void> _onSocialLogin(
+    AuthSocialLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      // Step 1: Get token from social provider
+      String? token;
+      if (event.provider == 'Google') {
+        token = await _socialAuthService.signInWithGoogle(
+          serverClientId: '321072041438-tfpfjq0166mvuqmqq9859vgf0tic5dag.apps.googleusercontent.com',
+        );
+      } else if (event.provider == 'Facebook') {
+        token = await _socialAuthService.signInWithFacebook();
+      }
+
+      if (token == null) {
+        emit(AuthUnauthenticated()); // User cancelled
+        return;
+      }
+
+      // Step 2: Send token to backend
+      final result = await _socialLogin(provider: event.provider, token: token);
+      if (result.isFailure) {
+        emit(AuthFailure(result.failure!.message));
+        return;
+      }
+
+      final data = result.data!;
+      if (data['isNewUser'] == true) {
+        // New user — need to complete registration
+        emit(AuthSocialNewUser(
+          provider: event.provider,
+          token: token,
+          email: data['email'] as String? ?? '',
+          fullName: data['fullName'] as String? ?? '',
+          avatarUrl: data['avatarUrl'] as String?,
+        ));
+      } else {
+        // Existing user — already authenticated (saved in repository)
+        final user = UserModel.fromJson(data['authData'] as Map<String, dynamic>);
+        emit(AuthAuthenticated(user));
+      }
+    } catch (e) {
+      emit(AuthFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onCompleteSocialRegistration(
+    AuthCompleteSocialRegistration event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    final result = await _completeSocialRegistration(
+      provider: event.provider,
+      token: event.token,
+      role: event.role,
+      phoneNumber: event.phoneNumber,
+    );
+    if (result.isSuccess) {
+      emit(AuthAuthenticated(result.data!));
+    } else {
+      emit(AuthFailure(result.failure!.message));
+    }
   }
 }

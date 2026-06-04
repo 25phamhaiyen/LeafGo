@@ -30,3 +30,20 @@ class AuthFailure extends AuthState {
   final String message;
   AuthFailure(this.message);
 }
+
+// Social login: new user needs to complete registration (choose role + phone)
+class AuthSocialNewUser extends AuthState {
+  final String provider;
+  final String token;
+  final String email;
+  final String fullName;
+  final String? avatarUrl;
+
+  AuthSocialNewUser({
+    required this.provider,
+    required this.token,
+    required this.email,
+    required this.fullName,
+    this.avatarUrl,
+  });
+}

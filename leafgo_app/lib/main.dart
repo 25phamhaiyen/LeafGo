@@ -11,6 +11,7 @@ import 'screens/main_screen.dart';
 import 'screens/admin/admin_main_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/auth/social_registration_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
@@ -46,6 +47,16 @@ class LeafGoApp extends StatelessWidget {
           '/home': (ctx) => const MainScreen(),
           '/admin-dashboard': (ctx) => const AdminMainScreen(),
           '/onboarding': (ctx) => const OnboardingScreen(),
+          '/social-registration': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments as AuthSocialNewUser;
+            return SocialRegistrationScreen(
+              provider: args.provider,
+              token: args.token,
+              email: args.email,
+              fullName: args.fullName,
+              avatarUrl: args.avatarUrl,
+            );
+          },
         },
       ),
     );
