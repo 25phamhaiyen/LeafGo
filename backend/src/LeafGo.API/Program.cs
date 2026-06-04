@@ -209,6 +209,9 @@ namespace LeafGo.API
             builder.Services.AddScoped<IJwtService, JwtService>();
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<GoogleAuthProvider>();
+            builder.Services.AddScoped<FacebookAuthProvider>();
             builder.Services.AddScoped<IFileService, LocalFileService>();
 
             // Redis & Cache Services

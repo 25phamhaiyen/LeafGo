@@ -14,19 +14,25 @@ namespace LeafGo.Infrastructure.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
         private readonly IMemoryCache _cache;
+        private readonly GoogleAuthProvider _googleAuth;
+        private readonly FacebookAuthProvider _facebookAuth;
 
         public AuthService(
             LeafGoDbContext context,
             IJwtService jwtService,
             IPasswordHasher passwordHasher,
             IEmailService emailService,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            GoogleAuthProvider googleAuth,
+            FacebookAuthProvider facebookAuth)
         {
             _context = context;
             _jwtService = jwtService;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
             _cache = cache;
+            _googleAuth = googleAuth;
+            _facebookAuth = facebookAuth;
         }
 
         public async Task RequestRegistrationOtpAsync(RegisterRequest request)
@@ -321,6 +327,200 @@ namespace LeafGo.Infrastructure.Services
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<SocialLoginResponse> SocialLoginAsync(SocialLoginRequest request, string? ipAddress)
+        {
+            // Validate token with provider
+            ISocialAuthProvider provider = request.Provider switch
+            {
+                "Google" => _googleAuth,
+                "Facebook" => _facebookAuth,
+                _ => throw new InvalidOperationException("Unsupported provider")
+            };
+
+            var socialUser = await provider.ValidateTokenAsync(request.Token);
+
+            if (string.IsNullOrEmpty(socialUser.Email))
+            {
+                throw new InvalidOperationException("Email is required from social provider");
+            }
+
+            // 1. Check if already linked
+            var externalLogin = await _context.Set<UserExternalLogin>()
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.Provider == request.Provider && e.ProviderKey == socialUser.ProviderId);
+
+            if (externalLogin != null)
+            {
+                var linkedUser = externalLogin.User;
+                if (!linkedUser.IsActive)
+                    throw new UnauthorizedAccessException("Account is locked. Please contact administrator");
+                if (linkedUser.IsDeleted)
+                    throw new UnauthorizedAccessException("Account has been deleted");
+
+                var accessToken = _jwtService.GenerateAccessToken(linkedUser);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+                await SaveRefreshTokenAsync(linkedUser.Id, refreshToken, ipAddress);
+
+                return new SocialLoginResponse
+                {
+                    IsNewUser = false,
+                    AuthData = new AuthResponse
+                    {
+                        Id = linkedUser.Id,
+                        Email = linkedUser.Email,
+                        FullName = linkedUser.FullName,
+                        Role = linkedUser.Role,
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken,
+                        ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                        IsOnline = linkedUser.IsOnline
+                    }
+                };
+            }
+
+            // 2. Check if email already exists → auto link
+            var existingUser = await _context.Set<User>()
+                .FirstOrDefaultAsync(u => u.Email == socialUser.Email && !u.IsDeleted);
+
+            if (existingUser != null)
+            {
+                if (!existingUser.IsActive)
+                    throw new UnauthorizedAccessException("Account is locked. Please contact administrator");
+
+                // Auto link account
+                var newExternalLogin = new UserExternalLogin
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = existingUser.Id,
+                    Provider = request.Provider,
+                    ProviderKey = socialUser.ProviderId,
+                    Email = socialUser.Email,
+                    DisplayName = socialUser.FullName,
+                    AvatarUrl = socialUser.AvatarUrl,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Set<UserExternalLogin>().Add(newExternalLogin);
+
+                // Update avatar if user doesn't have one
+                if (string.IsNullOrEmpty(existingUser.Avatar) && !string.IsNullOrEmpty(socialUser.AvatarUrl))
+                {
+                    existingUser.Avatar = socialUser.AvatarUrl;
+                    existingUser.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+
+                var accessToken = _jwtService.GenerateAccessToken(existingUser);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+                await SaveRefreshTokenAsync(existingUser.Id, refreshToken, ipAddress);
+
+                return new SocialLoginResponse
+                {
+                    IsNewUser = false,
+                    AuthData = new AuthResponse
+                    {
+                        Id = existingUser.Id,
+                        Email = existingUser.Email,
+                        FullName = existingUser.FullName,
+                        Role = existingUser.Role,
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken,
+                        ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                        IsOnline = existingUser.IsOnline
+                    }
+                };
+            }
+
+            // 3. New user → return info for registration form
+            return new SocialLoginResponse
+            {
+                IsNewUser = true,
+                Email = socialUser.Email,
+                FullName = socialUser.FullName,
+                AvatarUrl = socialUser.AvatarUrl
+            };
+        }
+
+        public async Task<AuthResponse> CompleteSocialRegistrationAsync(CompleteSocialRegistrationRequest request, string? ipAddress)
+        {
+            // Re-validate token
+            ISocialAuthProvider provider = request.Provider switch
+            {
+                "Google" => _googleAuth,
+                "Facebook" => _facebookAuth,
+                _ => throw new InvalidOperationException("Unsupported provider")
+            };
+
+            var socialUser = await provider.ValidateTokenAsync(request.Token);
+
+            // Check if email already taken (race condition guard)
+            var existingUser = await _context.Set<User>()
+                .FirstOrDefaultAsync(u => u.Email == socialUser.Email && !u.IsDeleted);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("Email already exists");
+            }
+
+            // Check if phone number already taken
+            var phoneExists = await _context.Set<User>()
+                .AnyAsync(u => u.PhoneNumber == request.PhoneNumber && !u.IsDeleted);
+            if (phoneExists)
+            {
+                throw new InvalidOperationException("Phone number already exists");
+            }
+
+            // Create new user
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = socialUser.Email,
+                PasswordHash = null,
+                FullName = socialUser.FullName,
+                PhoneNumber = request.PhoneNumber,
+                Role = request.Role,
+                Avatar = socialUser.AvatarUrl,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Set<User>().Add(user);
+
+            // Create external login link
+            var externalLogin = new UserExternalLogin
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Provider = request.Provider,
+                ProviderKey = socialUser.ProviderId,
+                Email = socialUser.Email,
+                DisplayName = socialUser.FullName,
+                AvatarUrl = socialUser.AvatarUrl,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Set<UserExternalLogin>().Add(externalLogin);
+            await _context.SaveChangesAsync();
+
+            // Generate tokens
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+            await SaveRefreshTokenAsync(user.Id, refreshToken, ipAddress);
+
+            return new AuthResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                IsOnline = user.IsOnline
+            };
         }
 
         private async Task SaveRefreshTokenAsync(Guid userId, string token, string? ipAddress)

@@ -15,8 +15,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 RUN adduser --disabled-password --gecos "" appuser
-RUN mkdir -p /app/wwwroot/avatars && chown -R appuser /app
-USER appuser
+RUN mkdir -p /app/wwwroot/uploads/avatars && chown -R appuser /app
+USER root
 COPY --from=publish /app/publish .
 EXPOSE 8080
 EXPOSE 8081

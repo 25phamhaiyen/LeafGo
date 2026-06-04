@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using LeafGo.Domain.Entities;
 
 namespace LeafGo.Infrastructure;
@@ -23,6 +23,7 @@ public partial class LeafGoDbContext : DbContext
     public DbSet<Ratings> Ratings { get; set; }
     public DbSet<DriverLocation> DriverLocations { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserExternalLogin> UserExternalLogins { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -108,5 +109,13 @@ public partial class LeafGoDbContext : DbContext
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => n.IsRead);
+
+        // UserExternalLogin indexes
+        modelBuilder.Entity<UserExternalLogin>()
+            .HasIndex(e => e.UserId);
+
+        modelBuilder.Entity<UserExternalLogin>()
+            .HasIndex(e => new { e.Provider, e.ProviderKey })
+            .IsUnique();
     }
 }
