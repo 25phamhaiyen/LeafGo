@@ -272,9 +272,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 12),
                       InkWell(
                         onTap: () {
+                          final userBloc = context.read<UserBloc>();
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => EditProfileScreen(user: user),
+                              builder: (_) => BlocProvider.value(
+                                value: userBloc,
+                                child: EditProfileScreen(user: user),
+                              ),
                             ),
                           );
                         },

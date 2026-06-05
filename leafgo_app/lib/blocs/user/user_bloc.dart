@@ -98,7 +98,17 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       final token = await _getToken();
       if (token == null) throw Exception('No token found');
       final profile = await repository.getProfile(token);
-      emit(state.copyWith(profile: profile, isLoading: false));
+      UserModel updatedProfile = profile;
+      final cachedUser = await authLocalDataSource.getCachedUser();
+      if (cachedUser != null) {
+        updatedProfile = profile.copyWith(
+          accessToken: cachedUser.accessToken,
+          refreshToken: cachedUser.refreshToken,
+          expiresAt: cachedUser.expiresAt,
+        );
+        await authLocalDataSource.saveUser(updatedProfile);
+      }
+      emit(state.copyWith(profile: updatedProfile, isLoading: false));
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoading: false));
     }
@@ -117,7 +127,17 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         event.phoneNumber,
         token,
       );
-      emit(state.copyWith(profile: profile, isLoading: false));
+      UserModel updatedProfile = profile;
+      final cachedUser = await authLocalDataSource.getCachedUser();
+      if (cachedUser != null) {
+        updatedProfile = profile.copyWith(
+          accessToken: cachedUser.accessToken,
+          refreshToken: cachedUser.refreshToken,
+          expiresAt: cachedUser.expiresAt,
+        );
+        await authLocalDataSource.saveUser(updatedProfile);
+      }
+      emit(state.copyWith(profile: updatedProfile, isLoading: false));
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoading: false));
     }
@@ -133,7 +153,21 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       if (token == null) throw Exception('No token found');
       final avatarUrl = await repository.uploadAvatar(event.imageFile, token);
       final updatedProfile = state.profile?.copyWith(avatar: avatarUrl);
-      emit(state.copyWith(profile: updatedProfile, isLoading: false));
+      if (updatedProfile != null) {
+        UserModel updatedWithTokens = updatedProfile;
+        final cachedUser = await authLocalDataSource.getCachedUser();
+        if (cachedUser != null) {
+          updatedWithTokens = updatedProfile.copyWith(
+            accessToken: cachedUser.accessToken,
+            refreshToken: cachedUser.refreshToken,
+            expiresAt: cachedUser.expiresAt,
+          );
+          await authLocalDataSource.saveUser(updatedWithTokens);
+        }
+        emit(state.copyWith(profile: updatedWithTokens, isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false));
+      }
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoading: false));
     }

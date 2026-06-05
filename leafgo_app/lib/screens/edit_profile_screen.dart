@@ -51,17 +51,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _phoneController.text.trim(),
       ),
     );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã gửi yêu cầu cập nhật thông tin'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) Navigator.of(context).pop(true);
-    });
   }
 
   @override
@@ -78,7 +67,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: BlocListener<UserBloc, UserState>(
+        listener: (context, state) {
+          if (!state.isLoading && _isLoading) {
+            setState(() => _isLoading = false);
+            if (state.error != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Cập nhật thất bại: ${state.error}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cập nhật thông tin thành công'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.of(context).pop(true);
+            }
+          }
+        },
+        child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Form(
           key: _formKey,
@@ -327,6 +338,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
