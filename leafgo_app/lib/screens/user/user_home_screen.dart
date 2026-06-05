@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:leafgo_app/blocs/auth/auth_bloc.dart';
 import 'package:leafgo_app/blocs/booking/booking_bloc.dart';
 import 'package:leafgo_app/core/utils/avatar_utils.dart';
+import 'package:leafgo_app/core/utils/phone_utils.dart';
 import 'package:leafgo_app/models/booking/ride_model.dart';
 import '../chat_screen.dart';
 import 'package:leafgo_app/services/chat_notification_manager.dart';
@@ -879,7 +880,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 color: Color(0xFF10B981),
                                 size: 16,
                               ),
-                              onPressed: () {},
+                              onPressed: () async {
+                                final phone = ride.driver?.phoneNumber;
+                                if (phone != null && phone.isNotEmpty) {
+                                  final success = await launchPhoneCall(phone);
+                                  if (!success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Không thể mở ứng dụng cuộc gọi'),
+                                      ),
+                                    );
+                                  }
+                                } else if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Không tìm thấy số điện thoại của tài xế'),
+                                    ),
+                                  );
+                                }
+                              },
                               constraints: const BoxConstraints.tightFor(
                                 width: 32,
                                 height: 32,

@@ -75,6 +75,11 @@ class BookingSelectVehicleType extends BookingEvent {
   BookingSelectVehicleType(this.vehicleTypeId);
 }
 
+class BookingSearchTimeout extends BookingEvent {
+  final String rideId;
+  BookingSearchTimeout(this.rideId);
+}
+
 // ── State ───────────────────────────────────────────────────
 class BookingState {
   final List<VehicleType> vehicleTypes;
@@ -153,6 +158,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   int _pickupLocationVersion = 0;
   int _dropoffLocationVersion = 0;
   Timer? _pendingPollTimer;
+  Timer? _searchTimeoutTimer;
 
   BookingBloc({
     required this.repository,
@@ -185,7 +191,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         add(BookingFetchRoute());
       }
     });
+    on<BookingSearchTimeout>(_onSearchTimeout);
     on<BookingReset>((event, emit) {
+      _stopPendingPollTimer();
+      _stopSearchTimeoutTimer();
       emit(
         BookingState(
           vehicleTypes: state.vehicleTypes,
@@ -447,6 +456,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(state.copyWith(currentRide: ride));
       // Start polling as fallback in case SignalR event is missed
       _startPendingPollTimer();
+      _startSearchTimeoutTimer(ride.id);
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoading: false));
     } finally {
@@ -459,6 +469,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     Emitter<BookingState> emit,
   ) async {
     if (state.currentRide == null || _token == null) return;
+    _stopSearchTimeoutTimer();
+    _stopPendingPollTimer();
     final rideId = state.currentRide!.id;
     try {
       await repository.cancelRide(rideId, event.reason, _token!);
@@ -502,6 +514,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         // Stop polling if ride is no longer Pending (driver accepted)
         if (ride.status != 'Pending') {
           _stopPendingPollTimer();
+          _stopSearchTimeoutTimer();
+        } else {
+          if (_searchTimeoutTimer == null) {
+            _startSearchTimeoutTimer(ride.id);
+          }
         }
 
         emit(
@@ -514,6 +531,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         await signalRService.joinRideGroup(ride.id);
       } else {
         _stopPendingPollTimer();
+        _stopSearchTimeoutTimer();
         emit(
           state.copyWith(
             currentRide: null,
@@ -532,6 +550,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   void _onRideAccepted(BookingRideAccepted event, Emitter<BookingState> emit) {
     if (state.currentRide == null) return;
     _stopPendingPollTimer();
+    _stopSearchTimeoutTimer();
 
     final driverJson = event.data['driver'] ?? event.data['Driver'];
     final driver = driverJson is Map
@@ -554,6 +573,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     Emitter<BookingState> emit,
   ) async {
     if (state.currentRide == null) return;
+
+    if (event.status != 'Pending') {
+      _stopSearchTimeoutTimer();
+    }
 
     final updatedRide = _copyRide(state.currentRide!, status: event.status);
 
@@ -663,13 +686,50 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     BookingUpdateDriverLocation event,
     Emitter<BookingState> emit,
   ) {
-    if (!_isValidLatLng(event.location.latitude, event.location.longitude))
+    if (!_isValidLatLng(event.location.latitude, event.location.longitude)) {
       return;
+    }
     emit(state.copyWith(driverLocation: event.location));
   }
 
   bool _isValidLatLng(double lat, double lng) {
     return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  }
+
+  Future<void> _onSearchTimeout(
+    BookingSearchTimeout event,
+    Emitter<BookingState> emit,
+  ) async {
+    if (state.currentRide != null &&
+        state.currentRide!.id == event.rideId &&
+        state.currentRide!.status == 'Pending') {
+      _stopPendingPollTimer();
+      _stopSearchTimeoutTimer();
+
+      final rideId = event.rideId;
+      try {
+        if (_token != null) {
+          await repository.cancelRide(rideId, 'Hệ thống không tìm thấy tài xế trong 3 phút', _token!);
+        }
+      } catch (e) {
+        // Log error
+      }
+
+      try {
+        await signalRService.leaveRideGroup(rideId);
+      } catch (_) {}
+
+      emit(
+        state.copyWith(
+          currentRide: null,
+          driverLocation: null,
+          routeCoordinates: [],
+          priceData: null,
+          error: 'Hệ thống hiện tại không tìm thấy tài xế',
+          resetCounter: state.resetCounter + 1,
+        ),
+      );
+    }
   }
 
   /// Start a periodic timer to poll active ride status as a fallback
@@ -691,9 +751,22 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     _pendingPollTimer = null;
   }
 
+  void _startSearchTimeoutTimer(String rideId) {
+    _stopSearchTimeoutTimer();
+    _searchTimeoutTimer = Timer(const Duration(minutes: 3), () {
+      add(BookingSearchTimeout(rideId));
+    });
+  }
+
+  void _stopSearchTimeoutTimer() {
+    _searchTimeoutTimer?.cancel();
+    _searchTimeoutTimer = null;
+  }
+
   @override
   Future<void> close() {
     _stopPendingPollTimer();
+    _stopSearchTimeoutTimer();
     signalRService.offAll();
     return super.close();
   }
