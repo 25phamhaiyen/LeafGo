@@ -12,6 +12,7 @@ import 'package:leafgo_app/services/chat_notification_manager.dart';
 import 'package:leafgo_app/screens/driver/driver_vehicle_screen.dart';
 import 'package:leafgo_app/core/services/location_service.dart';
 import '../../core/utils/avatar_utils.dart';
+import '../../core/utils/phone_utils.dart';
 import '../../injection_container.dart';
 import '../../blocs/driver/driver_bloc.dart';
 
@@ -1291,12 +1292,25 @@ class _ActiveRidePanel extends StatelessWidget {
                     color: _green,
                     bgColor: const Color(0xFFECFDF5),
                     borderColor: const Color(0xFFBBF7D0),
-                    onTap: () {
+                    onTap: () async {
                       final phone = ride.user?.phoneNumber;
                       if (phone != null && phone.isNotEmpty) {
+                        final success = await launchPhoneCall(phone);
+                        if (!success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Không thể mở ứng dụng cuộc gọi'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                        }
+                      } else if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Gọi cho khách hàng: $phone'),
+                            content: const Text('Không tìm thấy số điện thoại của khách hàng'),
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
