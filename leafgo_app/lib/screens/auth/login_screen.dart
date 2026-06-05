@@ -48,6 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
             } else {
               Navigator.of(context).pushReplacementNamed('/home');
             }
+          } else if (state is AuthSocialNewUser) {
+            Navigator.of(context).pushNamed(
+              '/social-registration',
+              arguments: state,
+            );
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -259,8 +264,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               Expanded(
                                 child: _socialButton(
                                   label: 'Google',
-                                  icon: Icons.g_mobiledata, // Placeholder
-                                  onTap: () {},
+                                  icon: Icons.g_mobiledata,
+                                  onTap: () {
+                                    context.read<AuthBloc>().add(
+                                      AuthSocialLoginRequested('Google'),
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -268,7 +277,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: _socialButton(
                                   label: 'Facebook',
                                   icon: Icons.facebook,
-                                  onTap: () {},
+                                  onTap: () {
+                                    context.read<AuthBloc>().add(
+                                      AuthSocialLoginRequested('Facebook'),
+                                    );
+                                  },
                                 ),
                               ),
                             ],

@@ -304,6 +304,72 @@ namespace LeafGo.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Social login with Google or Facebook
+        /// </summary>
+        [HttpPost("social-login")]
+        [ProducesResponseType(typeof(ApiResponse<SocialLoginResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SocialLogin([FromBody] SocialLoginRequest request)
+        {
+            try
+            {
+                var ipAddress = GetIpAddress();
+                var response = await _authService.SocialLoginAsync(request, ipAddress);
+
+                return Ok(ApiResponse<SocialLoginResponse>.SuccessResponse(
+                    response,
+                    response.IsNewUser ? "New user, registration required" : "Login successful"
+                ));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new ErrorResponse { Error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ErrorResponse { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during social login");
+                return StatusCode(500, new ErrorResponse { Error = "An error occurred during social login" });
+            }
+        }
+
+        /// <summary>
+        /// Complete social registration (choose role + enter phone number)
+        /// </summary>
+        [HttpPost("social-login/complete-registration")]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CompleteSocialRegistration([FromBody] CompleteSocialRegistrationRequest request)
+        {
+            try
+            {
+                var ipAddress = GetIpAddress();
+                var response = await _authService.CompleteSocialRegistrationAsync(request, ipAddress);
+
+                return StatusCode(201, ApiResponse<AuthResponse>.SuccessResponse(
+                    response,
+                    "User registered successfully"
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ErrorResponse { Error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new ErrorResponse { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during social registration");
+                return StatusCode(500, new ErrorResponse { Error = "An error occurred during registration" });
+            }
+        }
+
         #region Helper Methods
 
         private Guid GetCurrentUserId()

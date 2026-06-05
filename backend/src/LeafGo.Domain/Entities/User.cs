@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,9 +10,9 @@ public partial class User
 {
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }
     public string FullName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string Role { get; set; } = string.Empty; // User, Driver, Admin
     public string? Avatar { get; set; }
     public bool IsActive { get; set; } = true;
@@ -32,4 +32,5 @@ public partial class User
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public virtual DriverVehicle? DriverVehicle { get; set; }
     public virtual DriverLocation? DriverLocation { get; set; }
+    public virtual ICollection<UserExternalLogin> ExternalLogins { get; set; } = new List<UserExternalLogin>();
 }

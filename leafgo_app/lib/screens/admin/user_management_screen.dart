@@ -176,127 +176,41 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     BuildContext context, {
     AdminUserModel? user,
   }) async {
-    final fullNameCtrl = TextEditingController(text: user?.fullName ?? '');
-    final emailCtrl = TextEditingController(text: user?.email ?? '');
-    final phoneCtrl = TextEditingController(text: user?.phoneNumber ?? '');
-    final passwordCtrl = TextEditingController();
-    var role = user?.role ?? 'User';
-    var isActive = user?.isActive ?? true;
-    final formKey = GlobalKey<FormState>();
-
+    if (!context.mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          return AlertDialog(
-            title: Text(user == null ? 'Thêm người dùng' : 'Sửa người dùng'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: fullNameCtrl,
-                      decoration: const InputDecoration(labelText: 'Họ tên'),
-                      validator: _required,
-                    ),
-                    TextFormField(
-                      controller: phoneCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Số điện thoại',
-                      ),
-                      validator: _required,
-                    ),
-                    if (user == null) ...[
-                      TextFormField(
-                        controller: emailCtrl,
-                        decoration: const InputDecoration(labelText: 'Email'),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: _required,
-                      ),
-                      TextFormField(
-                        controller: passwordCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Mật khẩu',
-                        ),
-                        obscureText: true,
-                        validator: _required,
-                      ),
-                      DropdownButtonFormField<String>(
-                        initialValue: role,
-                        decoration: const InputDecoration(labelText: 'Vai trò'),
-                        items: const [
-                          DropdownMenuItem(value: 'User', child: Text('User')),
-                          DropdownMenuItem(
-                            value: 'Driver',
-                            child: Text('Driver'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Admin',
-                            child: Text('Admin'),
-                          ),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => role = value ?? 'User'),
-                      ),
-                    ] else
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Đang hoạt động'),
-                        value: isActive,
-                        onChanged: (value) =>
-                            setDialogState(() => isActive = value),
-                      ),
-                  ],
+      builder: (dialogContext) => _UserFormDialog(
+        user: user,
+        onSave: (fullName, phoneNumber, email, password, role, isActive) {
+          if (context.mounted) {
+            final bloc = context.read<AdminBloc>();
+            if (user == null) {
+              bloc.add(
+                AdminCreateUser(
+                  accessToken: _token(context),
+                  email: email,
+                  password: password,
+                  fullName: fullName,
+                  phoneNumber: phoneNumber,
+                  role: role,
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Hủy'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState?.validate() != true) return;
-                  final bloc = context.read<AdminBloc>();
-                  if (user == null) {
-                    bloc.add(
-                      AdminCreateUser(
-                        accessToken: _token(context),
-                        email: emailCtrl.text.trim(),
-                        password: passwordCtrl.text,
-                        fullName: fullNameCtrl.text.trim(),
-                        phoneNumber: phoneCtrl.text.trim(),
-                        role: role,
-                      ),
-                    );
-                  } else {
-                    bloc.add(
-                      AdminUpdateUser(
-                        accessToken: _token(context),
-                        id: user.id,
-                        fullName: fullNameCtrl.text.trim(),
-                        phoneNumber: phoneCtrl.text.trim(),
-                        isActive: isActive,
-                      ),
-                    );
-                  }
-                  Navigator.pop(dialogContext);
-                },
-                child: const Text('Lưu'),
-              ),
-            ],
-          );
+              );
+            } else {
+              bloc.add(
+                AdminUpdateUser(
+                  accessToken: _token(context),
+                  id: user.id,
+                  fullName: fullName,
+                  phoneNumber: phoneNumber,
+                  isActive: isActive,
+                ),
+              );
+            }
+          }
+          Navigator.pop(dialogContext);
         },
       ),
     );
-
-    fullNameCtrl.dispose();
-    emailCtrl.dispose();
-    phoneCtrl.dispose();
-    passwordCtrl.dispose();
   }
 }
 
@@ -630,4 +544,129 @@ String _money(double value) {
     if (fromEnd > 1 && fromEnd % 3 == 1) buffer.write('.');
   }
   return '$bufferđ';
+}
+
+class _UserFormDialog extends StatefulWidget {
+  final AdminUserModel? user;
+  final Function(
+    String fullName,
+    String phoneNumber,
+    String email,
+    String password,
+    String role,
+    bool isActive,
+  )
+  onSave;
+
+  const _UserFormDialog({required this.user, required this.onSave});
+
+  @override
+  State<_UserFormDialog> createState() => _UserFormDialogState();
+}
+
+class _UserFormDialogState extends State<_UserFormDialog> {
+  late TextEditingController fullNameCtrl;
+  late TextEditingController emailCtrl;
+  late TextEditingController phoneCtrl;
+  late TextEditingController passwordCtrl;
+  late String role;
+  late bool isActive;
+  final formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    fullNameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
+    emailCtrl = TextEditingController(text: widget.user?.email ?? '');
+    phoneCtrl = TextEditingController(text: widget.user?.phoneNumber ?? '');
+    passwordCtrl = TextEditingController();
+    role = widget.user?.role ?? 'User';
+    isActive = widget.user?.isActive ?? true;
+  }
+
+  @override
+  void dispose() {
+    fullNameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.user == null ? 'Thêm người dùng' : 'Sửa người dùng'),
+      content: Form(
+        key: formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: fullNameCtrl,
+                decoration: const InputDecoration(labelText: 'Họ tên'),
+                validator: _required,
+              ),
+              TextFormField(
+                controller: phoneCtrl,
+                decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                validator: _required,
+              ),
+              if (widget.user == null) ...[
+                TextFormField(
+                  controller: emailCtrl,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: passwordCtrl,
+                  decoration: const InputDecoration(labelText: 'Mật khẩu'),
+                  obscureText: true,
+                  validator: _required,
+                ),
+                DropdownButtonFormField<String>(
+                  initialValue: role,
+                  decoration: const InputDecoration(labelText: 'Vai trò'),
+                  items: const [
+                    DropdownMenuItem(value: 'User', child: Text('User')),
+                    DropdownMenuItem(value: 'Driver', child: Text('Driver')),
+                    DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+                  ],
+                  onChanged: (value) => setState(() => role = value ?? 'User'),
+                ),
+              ] else
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Đang hoạt động'),
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (formKey.currentState?.validate() != true) return;
+            widget.onSave(
+              fullNameCtrl.text.trim(),
+              phoneCtrl.text.trim(),
+              emailCtrl.text.trim(),
+              passwordCtrl.text,
+              role,
+              isActive,
+            );
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
+    );
+  }
 }

@@ -48,6 +48,8 @@ abstract class AuthRemoteDataSource {
   );
   Future<void> forgotPassword(ForgotPasswordRequest request);
   Future<void> resetPassword(ResetPasswordRequest request);
+  Future<Map<String, dynamic>> socialLogin(String provider, String token);
+  Future<UserModel> completeSocialRegistration(String provider, String token, String role, String phoneNumber);
 }
 
 // ── Implementation ────────────────────────────────────────────
@@ -211,5 +213,39 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       body: json.encode(request.toJson()),
     );
     _decode(res);
+  }
+
+  /// POST /api/Auth/social-login → 200 OK
+  @override
+  Future<Map<String, dynamic>> socialLogin(String provider, String token) async {
+    final res = await _client.post(
+      _uri('social-login'),
+      headers: _jsonHeaders,
+      body: json.encode({'provider': provider, 'token': token}),
+    );
+    final data = _decode(res);
+    return data['data'] as Map<String, dynamic>;
+  }
+
+  /// POST /api/Auth/social-login/complete-registration → 201 Created
+  @override
+  Future<UserModel> completeSocialRegistration(
+    String provider,
+    String token,
+    String role,
+    String phoneNumber,
+  ) async {
+    final res = await _client.post(
+      _uri('social-login/complete-registration'),
+      headers: _jsonHeaders,
+      body: json.encode({
+        'provider': provider,
+        'token': token,
+        'role': role,
+        'phoneNumber': phoneNumber,
+      }),
+    );
+    final data = _decode(res, expected: [201]);
+    return UserModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 }

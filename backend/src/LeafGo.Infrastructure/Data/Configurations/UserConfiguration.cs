@@ -1,4 +1,4 @@
-﻿using LeafGo.Domain.Entities;
+using LeafGo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -22,7 +22,6 @@ namespace LeafGo.Infrastructure.Data.Configurations
                 .HasMaxLength(255);
 
             builder.Property(u => u.PasswordHash)
-                .IsRequired()
                 .HasMaxLength(500);
 
             builder.Property(u => u.FullName)
@@ -30,7 +29,6 @@ namespace LeafGo.Infrastructure.Data.Configurations
                 .HasMaxLength(255);
 
             builder.Property(u => u.PhoneNumber)
-                .IsRequired()
                 .HasMaxLength(20);
 
             builder.Property(u => u.Role)

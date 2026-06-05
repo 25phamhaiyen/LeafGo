@@ -153,3 +153,31 @@ class ResetPasswordUseCase {
     );
   }
 }
+
+// ── 11. Social Login ─────────────────────────────────────────
+class SocialLoginUseCase {
+  final AuthRepository _repo;
+  SocialLoginUseCase(this._repo);
+
+  Future<Result<Map<String, dynamic>>> call({
+    required String provider,
+    required String token,
+  }) {
+    return _repo.socialLogin(provider, token);
+  }
+}
+
+// ── 12. Complete Social Registration ─────────────────────────
+class CompleteSocialRegistrationUseCase {
+  final AuthRepository _repo;
+  CompleteSocialRegistrationUseCase(this._repo);
+
+  Future<Result<UserModel>> call({
+    required String provider,
+    required String token,
+    required String role,
+    required String phoneNumber,
+  }) {
+    return _repo.completeSocialRegistration(provider, token, role, phoneNumber);
+  }
+}

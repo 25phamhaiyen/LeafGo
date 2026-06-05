@@ -66,3 +66,22 @@ class AuthRefreshTokenRequested extends AuthEvent {
   final String refreshToken;
   AuthRefreshTokenRequested(this.refreshToken);
 }
+
+class AuthSocialLoginRequested extends AuthEvent {
+  final String provider; // "Google" or "Facebook"
+  AuthSocialLoginRequested(this.provider);
+}
+
+class AuthCompleteSocialRegistration extends AuthEvent {
+  final String provider;
+  final String token;
+  final String role;
+  final String phoneNumber;
+
+  AuthCompleteSocialRegistration({
+    required this.provider,
+    required this.token,
+    required this.role,
+    required this.phoneNumber,
+  });
+}

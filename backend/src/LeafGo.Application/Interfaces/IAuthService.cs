@@ -14,5 +14,7 @@ namespace LeafGo.Application.Interfaces
         Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
         Task ForgotPasswordAsync(ForgotPasswordRequest request);
         Task ResetPasswordAsync(ResetPasswordRequest request);
+        Task<SocialLoginResponse> SocialLoginAsync(SocialLoginRequest request, string? ipAddress);
+        Task<AuthResponse> CompleteSocialRegistrationAsync(CompleteSocialRegistrationRequest request, string? ipAddress);
     }
 }

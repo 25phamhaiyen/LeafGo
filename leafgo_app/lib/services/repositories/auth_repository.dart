@@ -14,7 +14,6 @@ import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/models/auth/request/reset_password_request.dart';
 import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
 import 'package:leafgo_app/models/auth/request/verify_registration_otp_request.dart';
-import 'package:leafgo_app/models/auth/request/revoke_token_request.dart';
 import 'package:leafgo_app/models/auth/token/token_info_models.dart';
 import 'package:leafgo_app/models/auth/token/token_model.dart';
 import 'package:leafgo_app/models/auth/userEntity/user_models.dart';
@@ -71,6 +70,8 @@ abstract class AuthRepository {
   Future<Result<void>> changePassword(ChangePasswordRequest request);
   Future<Result<void>> forgotPassword(String email);
   Future<Result<void>> resetPassword(ResetPasswordRequest request);
+  Future<Result<Map<String, dynamic>>> socialLogin(String provider, String token);
+  Future<Result<UserModel>> completeSocialRegistration(String provider, String token, String role, String phoneNumber);
   Future<Result<void>> logout();
 }
 
@@ -230,6 +231,39 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _remote.resetPassword(request);
       return Result.success(null);
+    } catch (e) {
+      return _handleException(e);
+    }
+  }
+
+  @override
+  Future<Result<Map<String, dynamic>>> socialLogin(String provider, String token) async {
+    try {
+      final data = await _remote.socialLogin(provider, token);
+      // If user already exists (not new), save user data
+      if (data['isNewUser'] != true && data['authData'] != null) {
+        final user = UserModel.fromJson(data['authData'] as Map<String, dynamic>);
+        await _local.saveUser(user);
+        _currentUser = user;
+      }
+      return Result.success(data);
+    } catch (e) {
+      return _handleException(e);
+    }
+  }
+
+  @override
+  Future<Result<UserModel>> completeSocialRegistration(
+    String provider,
+    String token,
+    String role,
+    String phoneNumber,
+  ) async {
+    try {
+      final user = await _remote.completeSocialRegistration(provider, token, role, phoneNumber);
+      await _local.saveUser(user);
+      _currentUser = user;
+      return Result.success(user);
     } catch (e) {
       return _handleException(e);
     }

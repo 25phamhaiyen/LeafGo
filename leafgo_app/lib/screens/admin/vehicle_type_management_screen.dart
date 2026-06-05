@@ -160,116 +160,42 @@ class VehicleTypeManagementScreen extends StatelessWidget {
   }
 
   Future<void> _showForm(BuildContext context, {VehicleTypeModel? type}) async {
-    final nameCtrl = TextEditingController(text: type?.name ?? '');
-    final baseCtrl = TextEditingController(
-      text: type == null ? '' : type.basePrice.toStringAsFixed(0),
-    );
-    final kmCtrl = TextEditingController(
-      text: type == null ? '' : type.pricePerKm.toStringAsFixed(0),
-    );
-    final descCtrl = TextEditingController(text: type?.description ?? '');
-    var isActive = type?.isActive ?? true;
-    final formKey = GlobalKey<FormState>();
-
+    if (!context.mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          return AlertDialog(
-            title: Text(type == null ? 'Thêm loại xe' : 'Sửa loại xe'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Tên'),
-                      validator: _required,
-                    ),
-                    TextFormField(
-                      controller: baseCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Giá mở cửa',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: _positiveNumber,
-                    ),
-                    TextFormField(
-                      controller: kmCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Giá mỗi km',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: _positiveNumber,
-                    ),
-                    TextFormField(
-                      controller: descCtrl,
-                      decoration: const InputDecoration(labelText: 'Mô tả'),
-                      minLines: 1,
-                      maxLines: 3,
-                    ),
-                    if (type != null)
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Đang hoạt động'),
-                        value: isActive,
-                        onChanged: (value) =>
-                            setDialogState(() => isActive = value),
-                      ),
-                  ],
+      builder: (dialogContext) => _VehicleTypeFormDialog(
+        vehicleType: type,
+        onSave: (name, basePrice, pricePerKm, description, isActive) {
+          if (context.mounted) {
+            final bloc = context.read<AdminBloc>();
+            if (type == null) {
+              bloc.add(
+                AdminCreateVehicleType(
+                  accessToken: _token(context),
+                  name: name,
+                  basePrice: basePrice,
+                  pricePerKm: pricePerKm,
+                  description: description,
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Hủy'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState?.validate() != true) return;
-                  final bloc = context.read<AdminBloc>();
-                  final basePrice = double.parse(baseCtrl.text.trim());
-                  final pricePerKm = double.parse(kmCtrl.text.trim());
-                  if (type == null) {
-                    bloc.add(
-                      AdminCreateVehicleType(
-                        accessToken: _token(context),
-                        name: nameCtrl.text.trim(),
-                        basePrice: basePrice,
-                        pricePerKm: pricePerKm,
-                        description: descCtrl.text.trim(),
-                      ),
-                    );
-                  } else {
-                    bloc.add(
-                      AdminUpdateVehicleType(
-                        accessToken: _token(context),
-                        id: type.id,
-                        name: nameCtrl.text.trim(),
-                        basePrice: basePrice,
-                        pricePerKm: pricePerKm,
-                        description: descCtrl.text.trim(),
-                        isActive: isActive,
-                      ),
-                    );
-                  }
-                  Navigator.pop(dialogContext);
-                },
-                child: const Text('Lưu'),
-              ),
-            ],
-          );
+              );
+            } else {
+              bloc.add(
+                AdminUpdateVehicleType(
+                  accessToken: _token(context),
+                  id: type.id,
+                  name: name,
+                  basePrice: basePrice,
+                  pricePerKm: pricePerKm,
+                  description: description,
+                  isActive: isActive,
+                ),
+              );
+            }
+          }
+          Navigator.pop(dialogContext);
         },
       ),
     );
-
-    nameCtrl.dispose();
-    baseCtrl.dispose();
-    kmCtrl.dispose();
-    descCtrl.dispose();
   }
 }
 
@@ -294,4 +220,130 @@ String _money(double value) {
     if (fromEnd > 1 && fromEnd % 3 == 1) buffer.write('.');
   }
   return '$bufferđ';
+}
+
+class _VehicleTypeFormDialog extends StatefulWidget {
+  final VehicleTypeModel? vehicleType;
+  final Function(
+    String name,
+    double basePrice,
+    double pricePerKm,
+    String description,
+    bool isActive,
+  )
+  onSave;
+
+  const _VehicleTypeFormDialog({
+    required this.vehicleType,
+    required this.onSave,
+  });
+
+  @override
+  State<_VehicleTypeFormDialog> createState() => _VehicleTypeFormDialogState();
+}
+
+class _VehicleTypeFormDialogState extends State<_VehicleTypeFormDialog> {
+  late TextEditingController nameCtrl;
+  late TextEditingController baseCtrl;
+  late TextEditingController kmCtrl;
+  late TextEditingController descCtrl;
+  late bool isActive;
+  final formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    nameCtrl = TextEditingController(text: widget.vehicleType?.name ?? '');
+    baseCtrl = TextEditingController(
+      text: widget.vehicleType == null
+          ? ''
+          : widget.vehicleType!.basePrice.toStringAsFixed(0),
+    );
+    kmCtrl = TextEditingController(
+      text: widget.vehicleType == null
+          ? ''
+          : widget.vehicleType!.pricePerKm.toStringAsFixed(0),
+    );
+    descCtrl = TextEditingController(
+      text: widget.vehicleType?.description ?? '',
+    );
+    isActive = widget.vehicleType?.isActive ?? true;
+  }
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    baseCtrl.dispose();
+    kmCtrl.dispose();
+    descCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.vehicleType == null ? 'Thêm loại xe' : 'Sửa loại xe'),
+      content: Form(
+        key: formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Tên'),
+                validator: _required,
+              ),
+              TextFormField(
+                controller: baseCtrl,
+                decoration: const InputDecoration(labelText: 'Giá mở cửa'),
+                keyboardType: TextInputType.number,
+                validator: _positiveNumber,
+              ),
+              TextFormField(
+                controller: kmCtrl,
+                decoration: const InputDecoration(labelText: 'Giá mỗi km'),
+                keyboardType: TextInputType.number,
+                validator: _positiveNumber,
+              ),
+              TextFormField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'Mô tả'),
+                minLines: 1,
+                maxLines: 3,
+              ),
+              if (widget.vehicleType != null)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Đang hoạt động'),
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (formKey.currentState?.validate() != true) return;
+            final basePrice = double.parse(baseCtrl.text.trim());
+            final pricePerKm = double.parse(kmCtrl.text.trim());
+            widget.onSave(
+              nameCtrl.text.trim(),
+              basePrice,
+              pricePerKm,
+              descCtrl.text.trim(),
+              isActive,
+            );
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
+    );
+  }
 }

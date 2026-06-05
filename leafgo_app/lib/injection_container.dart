@@ -15,6 +15,7 @@ import 'package:leafgo_app/services/usecases/auth_usecases.dart';
 import 'package:leafgo_app/services/datasources/booking_remote_datasource.dart';
 import 'package:leafgo_app/services/repositories/booking_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:leafgo_app/services/social_auth_service.dart';
 
 // Features → Auth
 import 'services/datasources/auth_remote_datasource.dart';
@@ -51,6 +52,7 @@ Future<void> setupDI() async {
   final prefs = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => prefs);
   sl.registerLazySingleton<http.Client>(() => http.Client());
+  sl.registerLazySingleton<SocialAuthService>(() => SocialAuthService());
 
   // ── DataSources ───────────────────────────────────────────
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -93,7 +95,9 @@ Future<void> setupDI() async {
     ..registerLazySingleton(() => RefreshTokenUseCase(sl()))
     ..registerLazySingleton(() => ChangePasswordUseCase(sl()))
     ..registerLazySingleton(() => ForgotPasswordUseCase(sl()))
-    ..registerLazySingleton(() => ResetPasswordUseCase(sl()));
+    ..registerLazySingleton(() => ResetPasswordUseCase(sl()))
+    ..registerLazySingleton(() => SocialLoginUseCase(sl()))
+    ..registerLazySingleton(() => CompleteSocialRegistrationUseCase(sl()));
 
   // ── BLoC (factory → new instance per page) ───────────────
   sl.registerFactory(
@@ -107,6 +111,9 @@ Future<void> setupDI() async {
       changePassword: sl(),
       forgotPassword: sl(),
       resetPassword: sl(),
+      socialLogin: sl(),
+      completeSocialRegistration: sl(),
+      socialAuthService: sl(),
     ),
   );
 
