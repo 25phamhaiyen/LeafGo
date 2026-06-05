@@ -85,42 +85,30 @@ class LocationService {
       }
 
       // =========================
-      // USE OPENROUTESERVICE
+      // USE OSRM PUBLIC API
       // =========================
 
-      if (_orsApiKey.isNotEmpty) {
-        final uri = Uri.parse('$_orsApi/directions/driving-car');
+      final uri = Uri.parse(
+        'https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson',
+      );
 
-        final response = await http
-            .post(
-              uri,
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer $_orsApiKey',
-              },
-              body: jsonEncode({
-                'coordinates': [
-                  [start.lng, start.lat],
-                  [end.lng, end.lat],
-                ],
-              }),
-            )
-            .timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 15));
 
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-          if (data['routes'] != null && data['routes'].isNotEmpty) {
-            final route = data['routes'][0];
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
+          final route = data['routes'][0];
 
-            if (route['geometry'] != null &&
-                route['geometry']['coordinates'] != null) {
-              final coordinates = route['geometry']['coordinates'] as List;
+          if (route['geometry'] != null &&
+              route['geometry']['coordinates'] != null) {
+            final coordinates = route['geometry']['coordinates'] as List;
 
-              return coordinates.map((coord) {
-                return LatLng(coord[1], coord[0]);
-              }).toList();
-            }
+            return coordinates.map((coord) {
+              return LatLng(coord[1], coord[0]);
+            }).toList();
           }
         }
       }
