@@ -43,7 +43,83 @@ class AdminDashboardScreen extends StatelessWidget {
           sl<AdminBloc>()..add(AdminFetchDashboardData(_token(context))),
       child: Scaffold(
         backgroundColor: bgLight,
-        body: BlocBuilder<AdminBloc, AdminState>(
+        floatingActionButton: BlocBuilder<AdminBloc, AdminState>(
+          builder: (context, state) {
+            if (state is AdminDashboardLoaded) {
+              return FloatingActionButton.extended(
+                onPressed: state.isGeneratingAi
+                    ? null
+                    : () {
+                        context.read<AdminBloc>().add(AdminGenerateAiInsight(state.stats));
+                      },
+                backgroundColor: primaryColor,
+                icon: state.isGeneratingAi 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
+                label: Text(
+                  state.isGeneratingAi ? 'Đang phân tích...' : 'AI Insights',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        body: BlocConsumer<AdminBloc, AdminState>(
+          listenWhen: (previous, current) {
+            if (current is AdminFailure) return true;
+            if (previous is AdminDashboardLoaded && current is AdminDashboardLoaded) {
+              return previous.aiInsight == null && current.aiInsight != null;
+            }
+            return false;
+          },
+          listener: (context, state) {
+            if (state is AdminFailure) {
+              if (state.message.contains('401') ||
+                  state.message.toLowerCase().contains('unauthorized')) {
+                _handleLogout(context);
+                return;
+              }
+            }
+            if (state is AdminDashboardLoaded && state.aiInsight != null) {
+              showModalBottomSheet(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                builder: (context) => Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.auto_awesome, color: primaryColor),
+                          SizedBox(width: 8),
+                          Text('AI Insights', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textDark)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        state.aiInsight!,
+                        style: const TextStyle(fontSize: 16, height: 1.5),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+                          child: const Text('Đóng', style: TextStyle(color: Colors.white)),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }
+          },
           builder: (context, state) {
             if (state is AdminLoading) {
               return const Center(

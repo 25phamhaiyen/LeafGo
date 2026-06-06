@@ -49,67 +49,78 @@ class _RideManagementScreenState extends State<RideManagementScreen> {
           sl<AdminBloc>()..add(AdminFetchRides(accessToken: _token(context))),
       child: Builder(
         builder: (context) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Lịch sử chuyến đi')),
-            body: Column(
-              children: [
-                _RideFilters(
-                  status: _status,
-                  fromDate: _fromDate,
-                  toDate: _toDate,
-                  onStatusChanged: (value) {
-                    setState(() => _status = value);
-                    _fetch(context, page: 1);
-                  },
-                  onPickFrom: () async {
-                    final value = await _pickDate(context, _fromDate);
-                    if (value == null || !context.mounted) return;
-                    setState(() => _fromDate = value);
-                    _fetch(context, page: 1);
-                  },
-                  onPickTo: () async {
-                    final value = await _pickDate(context, _toDate);
-                    if (value == null || !context.mounted) return;
-                    setState(
-                      () => _toDate = DateTime(
-                        value.year,
-                        value.month,
-                        value.day,
-                        23,
-                        59,
-                      ),
-                    );
-                    _fetch(context, page: 1);
-                  },
-                  onClearDates: () {
-                    setState(() {
-                      _fromDate = null;
-                      _toDate = null;
-                    });
-                    _fetch(context, page: 1);
-                  },
-                ),
-                Expanded(
-                  child: BlocBuilder<AdminBloc, AdminState>(
-                    builder: (context, state) {
-                      if (state is AdminLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (state is AdminRidesLoaded) {
-                        return _RideList(
-                          rides: state.rides,
-                          onRefresh: () async => _fetch(context),
-                          onPageChanged: (page) => _fetch(context, page: page),
-                        );
-                      }
-                      if (state is AdminFailure) {
-                        return Center(child: Text('Lỗi: ${state.message}'));
-                      }
-                      return const SizedBox.shrink();
+          return BlocListener<AdminBloc, AdminState>(
+            listener: (context, state) {
+              if (state is AdminFailure) {
+                if (state.message.contains('401') ||
+                    state.message.toLowerCase().contains('unauthorized')) {
+                  context.read<AuthBloc>().add(AuthLogoutRequested());
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Lịch sử chuyến đi')),
+              body: Column(
+                children: [
+                  _RideFilters(
+                    status: _status,
+                    fromDate: _fromDate,
+                    toDate: _toDate,
+                    onStatusChanged: (value) {
+                      setState(() => _status = value);
+                      _fetch(context, page: 1);
+                    },
+                    onPickFrom: () async {
+                      final value = await _pickDate(context, _fromDate);
+                      if (value == null || !context.mounted) return;
+                      setState(() => _fromDate = value);
+                      _fetch(context, page: 1);
+                    },
+                    onPickTo: () async {
+                      final value = await _pickDate(context, _toDate);
+                      if (value == null || !context.mounted) return;
+                      setState(
+                        () => _toDate = DateTime(
+                          value.year,
+                          value.month,
+                          value.day,
+                          23,
+                          59,
+                        ),
+                      );
+                      _fetch(context, page: 1);
+                    },
+                    onClearDates: () {
+                      setState(() {
+                        _fromDate = null;
+                        _toDate = null;
+                      });
+                      _fetch(context, page: 1);
                     },
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: BlocBuilder<AdminBloc, AdminState>(
+                      builder: (context, state) {
+                        if (state is AdminLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (state is AdminRidesLoaded) {
+                          return _RideList(
+                            rides: state.rides,
+                            onRefresh: () async => _fetch(context),
+                            onPageChanged: (page) => _fetch(context, page: page),
+                          );
+                        }
+                        if (state is AdminFailure) {
+                          return Center(child: Text('Lỗi: ${state.message}'));
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

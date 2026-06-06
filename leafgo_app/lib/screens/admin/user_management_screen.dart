@@ -69,6 +69,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 _fetch(context, page: _page);
               }
               if (state is AdminFailure) {
+                if (state.message.contains('401') ||
+                    state.message.toLowerCase().contains('unauthorized')) {
+                  context.read<AuthBloc>().add(AuthLogoutRequested());
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                  return;
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Lỗi: ${state.message}')),
                 );

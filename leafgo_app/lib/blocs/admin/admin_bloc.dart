@@ -2,14 +2,16 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:leafgo_app/models/auth/request/register_request.dart';
+import '../../core/services/ai_service.dart';
 import '../../services/repositories/admin_repository.dart';
 import 'admin_event.dart';
 import 'admin_state.dart';
 
 class AdminBloc extends Bloc<AdminEvent, AdminState> {
   final AdminRepository repository;
+  final AIService aiService;
 
-  AdminBloc({required this.repository}) : super(AdminInitial()) {
+  AdminBloc({required this.repository, required this.aiService}) : super(AdminInitial()) {
     on<AdminFetchDashboardData>((event, emit) async {
       emit(AdminLoading());
       try {
@@ -17,6 +19,19 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         emit(AdminDashboardLoaded(stats));
       } catch (e) {
         emit(AdminFailure(e.toString()));
+      }
+    });
+
+    on<AdminGenerateAiInsight>((event, emit) async {
+      final currentState = state;
+      if (currentState is AdminDashboardLoaded) {
+        emit(currentState.copyWith(isGeneratingAi: true));
+        try {
+          final insight = await aiService.generateAdminInsight(event.stats);
+          emit(currentState.copyWith(isGeneratingAi: false, aiInsight: insight));
+        } catch (e) {
+          emit(currentState.copyWith(isGeneratingAi: false, aiInsight: 'Lỗi AI: \$e'));
+        }
       }
     });
 

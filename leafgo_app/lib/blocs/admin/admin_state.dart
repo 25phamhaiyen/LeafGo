@@ -12,6 +12,13 @@ class AdminInitial extends AdminState {}
 
 class AdminLoading extends AdminState {}
 
+class AdminAiInsightLoading extends AdminState {}
+
+class AdminAiInsightGenerated extends AdminState {
+  final String insight;
+  AdminAiInsightGenerated(this.insight);
+}
+
 class AdminActionSuccess extends AdminState {
   final String message;
   AdminActionSuccess(this.message);
@@ -19,8 +26,24 @@ class AdminActionSuccess extends AdminState {
 
 class AdminDashboardLoaded extends AdminState {
   final StatisticsModel stats;
-  AdminDashboardLoaded(this.stats);
+  final String? aiInsight;
+  final bool isGeneratingAi;
+
+  AdminDashboardLoaded(this.stats, {this.aiInsight, this.isGeneratingAi = false});
+
+  AdminDashboardLoaded copyWith({
+    StatisticsModel? stats,
+    String? aiInsight,
+    bool? isGeneratingAi,
+  }) {
+    return AdminDashboardLoaded(
+      stats ?? this.stats,
+      aiInsight: aiInsight ?? this.aiInsight,
+      isGeneratingAi: isGeneratingAi ?? this.isGeneratingAi,
+    );
+  }
 }
+
 
 class AdminUsersLoaded extends AdminState {
   final PaginatedResponse<AdminUserModel> users;

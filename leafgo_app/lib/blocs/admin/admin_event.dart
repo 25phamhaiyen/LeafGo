@@ -1,10 +1,16 @@
 // lib/features/admin/presentation/bloc/admin_event.dart
+import 'package:leafgo_app/models/admin/statistics/statistics_model.dart';
 
 abstract class AdminEvent {}
 
 class AdminFetchDashboardData extends AdminEvent {
   final String accessToken;
   AdminFetchDashboardData(this.accessToken);
+}
+
+class AdminGenerateAiInsight extends AdminEvent {
+  final StatisticsModel stats;
+  AdminGenerateAiInsight(this.stats);
 }
 
 class AdminFetchUsers extends AdminEvent {

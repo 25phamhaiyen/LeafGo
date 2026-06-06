@@ -158,6 +158,13 @@ class AuthRepositoryImpl implements AuthRepository {
         refreshToken: token.refreshToken,
         expiresAt: token.expiresAt,
       );
+      if (_currentUser != null) {
+        _currentUser = _currentUser!.copyWith(
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          expiresAt: token.expiresAt,
+        );
+      }
       return Result.success(token);
     } catch (e) {
       return _handleException(e);

@@ -9,6 +9,9 @@ import 'package:leafgo_app/models/admin/userManagement/paginated_response_model.
 import 'package:leafgo_app/models/admin/vehicle/vehicle_type.dart';
 import 'package:leafgo_app/models/auth/request/register_request.dart';
 import 'package:leafgo_app/models/auth/response/api_error.dart';
+import 'dart:developer' as dev;
+import '../../injection_container.dart';
+import 'auth_local_datasource.dart';
 
 abstract class AdminRemoteDataSource {
   // Users
@@ -103,6 +106,79 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     return json.decode(body);
   }
 
+  Future<String> _getValidToken(String passedToken) async {
+    final localDataSource = sl<AuthLocalDataSource>();
+    final cachedUser = await localDataSource.getCachedUser();
+    if (cachedUser != null) {
+      if (passedToken.isEmpty || passedToken != cachedUser.accessToken) {
+        return cachedUser.accessToken;
+      }
+    }
+    return passedToken;
+  }
+
+  Future<bool> _tryRefreshToken() async {
+    try {
+      final localDataSource = sl<AuthLocalDataSource>();
+      final cachedUser = await localDataSource.getCachedUser();
+      if (cachedUser == null || cachedUser.refreshToken.isEmpty) {
+        return false;
+      }
+
+      final response = await _client.post(
+        Uri.parse('$_baseUrl/api/Auth/refresh-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'refreshToken': cachedUser.refreshToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final body = json.decode(utf8.decode(response.bodyBytes));
+        if (body['success'] == true && body['data'] != null) {
+          final data = body['data'] as Map<String, dynamic>;
+          final accessToken = data['accessToken'] as String;
+          final refreshToken = data['refreshToken'] as String;
+          final expiresAt = DateTime.parse(data['expiresAt'] as String);
+
+          await localDataSource.saveTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            expiresAt: expiresAt,
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      dev.log('Token auto-refresh failed: $e');
+    }
+    return false;
+  }
+
+  Future<dynamic> _request(
+    Future<http.Response> Function(String token) requestFn,
+    String initialToken, {
+    List<int> expected = const [200, 201],
+  }) async {
+    String token = await _getValidToken(initialToken);
+    var res = await requestFn(token);
+    
+    if (res.statusCode == 401) {
+      final success = await _tryRefreshToken();
+      if (success) {
+        final newToken = await _getValidToken('');
+        if (newToken.isNotEmpty && newToken != token) {
+          res = await requestFn(newToken);
+        }
+      }
+    }
+    
+    return _decode(res, expected: expected);
+  }
+
   @override
   Future<PaginatedResponse<AdminUserModel>> getUsers({
     required String accessToken,
@@ -121,11 +197,13 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     if (search != null) query['search'] = search;
     if (isActive != null) query['isActive'] = isActive.toString();
     if (isOnline != null) query['isOnline'] = isOnline.toString();
-    final res = await _client.get(
-      _uri('users', query),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('users', query),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return PaginatedResponse.fromJson(
       data['data'] as Map<String, dynamic>,
       (item) => AdminUserModel.fromJson(item as Map<String, dynamic>),
@@ -137,22 +215,26 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String accessToken,
     RegisterRequest request,
   ) async {
-    final res = await _client.post(
-      _uri('users'),
-      headers: _headers(accessToken),
-      body: json.encode(request.toJson()),
+    final data = await _request(
+      (token) => _client.post(
+        _uri('users'),
+        headers: _headers(token),
+        body: json.encode(request.toJson()),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<AdminUserModel> getUserById(String accessToken, String id) async {
-    final res = await _client.get(
-      _uri('users/$id'),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('users/$id'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
@@ -162,22 +244,26 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String id,
     Map<String, dynamic> updateData,
   ) async {
-    final res = await _client.put(
-      _uri('users/$id'),
-      headers: _headers(accessToken),
-      body: json.encode(updateData),
+    final data = await _request(
+      (token) => _client.put(
+        _uri('users/$id'),
+        headers: _headers(token),
+        body: json.encode(updateData),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return AdminUserModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<void> deleteUser(String accessToken, String id) async {
-    final res = await _client.delete(
-      _uri('users/$id'),
-      headers: _headers(accessToken),
+    await _request(
+      (token) => _client.delete(
+        _uri('users/$id'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    _decode(res);
   }
 
   @override
@@ -186,12 +272,14 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String id,
     bool isActive,
   ) async {
-    final res = await _client.put(
-      _uri('users/$id/toggle-status'),
-      headers: _headers(accessToken),
-      body: json.encode({'isActive': isActive}),
+    await _request(
+      (token) => _client.put(
+        _uri('users/$id/toggle-status'),
+        headers: _headers(token),
+        body: json.encode({'isActive': isActive}),
+      ),
+      accessToken,
     );
-    _decode(res);
   }
 
   @override
@@ -214,11 +302,13 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     if (toDate != null) query['toDate'] = toDate.toIso8601String();
     if (userId != null) query['userId'] = userId;
     if (driverId != null) query['driverId'] = driverId;
-    final res = await _client.get(
-      _uri('rides', query),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('rides', query),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return PaginatedResponse.fromJson(
       data['data'] as Map<String, dynamic>,
       (item) => AdminRideModel.fromJson(item as Map<String, dynamic>),
@@ -227,31 +317,37 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<AdminRideModel> getRideById(String accessToken, String id) async {
-    final res = await _client.get(
-      _uri('rides/$id'),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('rides/$id'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return AdminRideModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<StatisticsModel> getStatistics(String accessToken) async {
-    final res = await _client.get(
-      _uri('statistics'),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('statistics'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return StatisticsModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
   Future<List<VehicleTypeModel>> getVehicleTypes(String accessToken) async {
-    final res = await _client.get(
-      _uri('vehicle-types'),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('vehicle-types'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return (data['data'] as List)
         .map((e) => VehicleTypeModel.fromJson(e))
         .toList();
@@ -262,12 +358,14 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String accessToken,
     Map<String, dynamic> data,
   ) async {
-    final res = await _client.post(
-      _uri('vehicle-types'),
-      headers: _headers(accessToken),
-      body: json.encode(data),
+    final dataRes = await _request(
+      (token) => _client.post(
+        _uri('vehicle-types'),
+        headers: _headers(token),
+        body: json.encode(data),
+      ),
+      accessToken,
     );
-    final dataRes = _decode(res);
     return VehicleTypeModel.fromJson(dataRes['data']);
   }
 
@@ -276,11 +374,13 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String accessToken,
     String id,
   ) async {
-    final res = await _client.get(
-      _uri('vehicle-types/$id'),
-      headers: _headers(accessToken),
+    final data = await _request(
+      (token) => _client.get(
+        _uri('vehicle-types/$id'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    final data = _decode(res);
     return VehicleTypeModel.fromJson(data['data']);
   }
 
@@ -290,21 +390,25 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     String id,
     Map<String, dynamic> data,
   ) async {
-    final res = await _client.put(
-      _uri('vehicle-types/$id'),
-      headers: _headers(accessToken),
-      body: json.encode(data),
+    final dataRes = await _request(
+      (token) => _client.put(
+        _uri('vehicle-types/$id'),
+        headers: _headers(token),
+        body: json.encode(data),
+      ),
+      accessToken,
     );
-    final dataRes = _decode(res);
     return VehicleTypeModel.fromJson(dataRes['data']);
   }
 
   @override
   Future<void> deleteVehicleType(String accessToken, String id) async {
-    final res = await _client.delete(
-      _uri('vehicle-types/$id'),
-      headers: _headers(accessToken),
+    await _request(
+      (token) => _client.delete(
+        _uri('vehicle-types/$id'),
+        headers: _headers(token),
+      ),
+      accessToken,
     );
-    _decode(res);
   }
 }

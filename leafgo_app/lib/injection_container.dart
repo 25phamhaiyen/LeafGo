@@ -23,6 +23,7 @@ import 'services/datasources/auth_local_datasource.dart';
 import 'services/repositories/auth_repository.dart';
 
 import 'blocs/auth/auth_bloc.dart';
+import 'core/services/ai_service.dart';
 
 import 'blocs/admin/admin_bloc.dart';
 import 'blocs/user/user_bloc.dart';
@@ -99,6 +100,9 @@ Future<void> setupDI() async {
     ..registerLazySingleton(() => SocialLoginUseCase(sl()))
     ..registerLazySingleton(() => CompleteSocialRegistrationUseCase(sl()));
 
+  // ── AI Service ─────────────────────────────────────────────
+  sl.registerLazySingleton<AIService>(() => AIService());
+
   // ── BLoC (factory → new instance per page) ───────────────
   sl.registerFactory(
     () => AuthBloc(
@@ -117,7 +121,7 @@ Future<void> setupDI() async {
     ),
   );
 
-  sl.registerFactory(() => AdminBloc(repository: sl()));
+  sl.registerFactory(() => AdminBloc(repository: sl(), aiService: sl()));
 
   // ── Booking Feature ────────────────────────────────────────
   sl.registerLazySingleton<LocationService>(() => LocationService());
